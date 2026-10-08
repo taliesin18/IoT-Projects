@@ -13,3 +13,15 @@ export async function listUsbDevices() {
 export async function requestUsbPermission(deviceId) {
   return RoboCodeUsb.requestPermission({ deviceId });
 }
+
+export async function openSerial(deviceId, baudRate) {
+  return RoboCodeUsb.openSerial({ deviceId, baudRate });
+}
+
+export async function closeSerial() {
+  return RoboCodeUsb.closeSerial();
+}
+
+export function addSerialListener(eventName, listener) {
+  return RoboCodeUsb.addListener(eventName, listener);
+}

@@ -49,4 +49,4 @@ The current Android wrapper proves that the existing Blockly app packages succes
 
 ### USB connection beta
 
-The Android app now detects supported USB serial adapters, including the CP2102 used by the Phase 0 board, and requests Android USB access only after the user taps **Allow USB access**. It does not flash the board or open the serial monitor yet. In the RoboCode Android app, connect the ESP32 through OTG, choose **Check ESP32**, then grant the Android permission for the listed device.
+The Android app now detects supported USB serial adapters, including the CP2102 used by the Phase 0 board, and requests Android USB access only after the user taps **Allow USB access**. In the RoboCode Android app, connect the ESP32 through OTG, choose **Check ESP32**, grant permission for the listed device, then open the Serial Monitor. It defaults to 115200 baud; resetting the ESP32 should show its boot output. Flashing is not implemented yet.

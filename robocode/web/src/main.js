@@ -3,7 +3,14 @@ import './style.css';
 import { defineRoboCodeBlocks, toolbox } from './blocks.js';
 import { generateArduinoCode } from './generator.js';
 import { createProject, loadProject } from './project.js';
-import { isNativeRoboCodeApp, listUsbDevices, requestUsbPermission } from './usb.js';
+import {
+  addSerialListener,
+  closeSerial,
+  isNativeRoboCodeApp,
+  listUsbDevices,
+  openSerial,
+  requestUsbPermission,
+} from './usb.js';
 
 defineRoboCodeBlocks();
 
@@ -68,6 +75,19 @@ document.querySelector('#app').innerHTML = `
         </div>
         <p id="usb-status" class="hint" aria-live="polite"></p>
         <ul id="usb-devices" class="usb-devices" aria-live="polite"></ul>
+        <div class="serial-monitor">
+          <div class="serial-controls">
+            <label for="serial-baud">Serial Monitor</label>
+            <select id="serial-baud" disabled>
+              <option value="115200">115200 baud</option>
+              <option value="9600">9600 baud</option>
+            </select>
+            <button id="open-serial" type="button" disabled>Open monitor</button>
+            <button id="close-serial" class="secondary" type="button" disabled>Disconnect</button>
+            <button id="clear-serial" class="secondary" type="button">Clear</button>
+          </div>
+          <pre id="serial-output" aria-live="polite">Select an ESP32 USB adapter to open the Serial Monitor.</pre>
+        </div>
       </section>
     </div>
   </main>
@@ -95,6 +115,13 @@ const buildPanel = document.querySelector('#build-panel');
 const hardwarePanel = document.querySelector('#hardware-panel');
 const toggleSketchButton = document.querySelector('#toggle-sketch');
 const sketchContent = document.querySelector('#sketch-content');
+const serialBaud = document.querySelector('#serial-baud');
+const openSerialButton = document.querySelector('#open-serial');
+const closeSerialButton = document.querySelector('#close-serial');
+const clearSerialButton = document.querySelector('#clear-serial');
+const serialOutput = document.querySelector('#serial-output');
+let selectedUsbDevice = null;
+let serialListenerHandles = [];
 
 function updateGeneratedCode() {
   codeElement.textContent = generateArduinoCode(workspace);
@@ -127,6 +154,21 @@ function setSketchExpanded(expanded) {
   toggleSketchButton.textContent = expanded ? 'Hide sketch' : 'Show sketch';
 }
 
+function appendSerialOutput(text) {
+  serialOutput.textContent += text;
+  if (serialOutput.textContent.length > 16000) {
+    serialOutput.textContent = serialOutput.textContent.slice(-16000);
+  }
+  serialOutput.scrollTop = serialOutput.scrollHeight;
+}
+
+function selectUsbDevice(device) {
+  selectedUsbDevice = device;
+  serialBaud.disabled = false;
+  openSerialButton.disabled = false;
+  usbStatus.textContent = `USB access ready for ${device.driver}. Open the Serial Monitor at 115200 baud.`;
+}
+
 function showUsbDevice(device) {
   const item = document.createElement('li');
   const details = document.createElement('span');
@@ -137,15 +179,20 @@ function showUsbDevice(device) {
   const permissionButton = document.createElement('button');
   permissionButton.className = 'secondary';
   permissionButton.type = 'button';
-  permissionButton.textContent = device.permissionGranted ? 'USB access ready' : 'Allow USB access';
-  permissionButton.disabled = device.permissionGranted;
+  permissionButton.textContent = device.permissionGranted ? 'Use for Serial Monitor' : 'Allow USB access';
   permissionButton.addEventListener('click', async () => {
     permissionButton.disabled = true;
+    if (device.permissionGranted) {
+      selectUsbDevice(device);
+      permissionButton.textContent = 'Selected for Serial Monitor';
+      return;
+    }
+
     usbStatus.textContent = 'Waiting for Android USB permission…';
     try {
       const grantedDevice = await requestUsbPermission(device.deviceId);
-      usbStatus.textContent = `USB access ready for ${grantedDevice.driver}. Flashing and Serial Monitor are the next step.`;
-      permissionButton.textContent = 'USB access ready';
+      selectUsbDevice(grantedDevice);
+      permissionButton.textContent = 'Selected for Serial Monitor';
     } catch (error) {
       permissionButton.disabled = false;
       usbStatus.textContent = `USB access was not granted: ${error.message}`;
@@ -153,6 +200,50 @@ function showUsbDevice(device) {
   });
   item.append(permissionButton);
   usbDevices.append(item);
+}
+
+async function openSerialMonitor() {
+  if (!selectedUsbDevice) {
+    usbStatus.textContent = 'Choose an ESP32 USB adapter first.';
+    return;
+  }
+
+  openSerialButton.disabled = true;
+  usbStatus.textContent = 'Opening the Serial Monitor…';
+  serialOutput.textContent = '';
+  try {
+    const device = await openSerial(selectedUsbDevice.deviceId, Number(serialBaud.value));
+    usbStatus.textContent = `Serial Monitor connected to ${device.driver} at ${device.baudRate} baud. Reset the ESP32 to view boot output.`;
+    closeSerialButton.disabled = false;
+  } catch (error) {
+    usbStatus.textContent = `Could not open the Serial Monitor: ${error.message}`;
+    openSerialButton.disabled = false;
+  }
+}
+
+async function closeSerialMonitor() {
+  try {
+    await closeSerial();
+    usbStatus.textContent = 'Serial Monitor disconnected.';
+  } catch (error) {
+    usbStatus.textContent = `Could not disconnect cleanly: ${error.message}`;
+  } finally {
+    closeSerialButton.disabled = true;
+    openSerialButton.disabled = selectedUsbDevice === null;
+  }
+}
+
+async function enableSerialEvents() {
+  if (!isNativeRoboCodeApp()) return;
+  serialListenerHandles = await Promise.all([
+    addSerialListener('serialData', ({ data }) => appendSerialOutput(data)),
+    addSerialListener('serialError', ({ message }) => {
+      appendSerialOutput(`\n[Serial error] ${message}\n`);
+      usbStatus.textContent = `Serial Monitor stopped: ${message}`;
+      closeSerialButton.disabled = true;
+      openSerialButton.disabled = selectedUsbDevice === null;
+    }),
+  ]);
 }
 
 async function checkUsbConnection() {
@@ -256,6 +347,11 @@ checkUsbButton.addEventListener('click', checkUsbConnection);
 buildTab.addEventListener('click', () => setActiveTab('build'));
 hardwareTab.addEventListener('click', () => setActiveTab('hardware'));
 toggleSketchButton.addEventListener('click', () => setSketchExpanded(sketchContent.hidden));
+openSerialButton.addEventListener('click', openSerialMonitor);
+closeSerialButton.addEventListener('click', closeSerialMonitor);
+clearSerialButton.addEventListener('click', () => {
+  serialOutput.textContent = '';
+});
 
 new ResizeObserver(() => Blockly.svgResize(workspace)).observe(document.querySelector('#blockly-div'));
 updateGeneratedCode();
@@ -263,3 +359,4 @@ setSketchExpanded(false);
 usbStatus.textContent = isNativeRoboCodeApp()
   ? 'Connect your ESP32 through OTG, then choose Check ESP32.'
   : 'USB detection is available in the RoboCode Android app. The browser version keeps using ArduinoDroid.';
+enableSerialEvents();

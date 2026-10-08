@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Build;
 
@@ -18,8 +19,12 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
+import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @CapacitorPlugin(name = "RoboCodeUsb")
@@ -29,6 +34,10 @@ public class RoboCodeUsbPlugin extends Plugin {
     private UsbManager usbManager;
     private PluginCall pendingPermissionCall;
     private BroadcastReceiver permissionReceiver;
+    private UsbDeviceConnection serialConnection;
+    private UsbSerialPort serialPort;
+    private SerialInputOutputManager serialIoManager;
+    private int connectedDeviceId = -1;
 
     @Override
     public void load() {
@@ -66,6 +75,7 @@ public class RoboCodeUsbPlugin extends Plugin {
 
     @Override
     protected void handleOnDestroy() {
+        closeSerialConnection();
         if (permissionReceiver != null) {
             getContext().unregisterReceiver(permissionReceiver);
             permissionReceiver = null;
@@ -143,6 +153,119 @@ public class RoboCodeUsbPlugin extends Plugin {
         Intent permissionIntent = new Intent(USB_PERMISSION_ACTION).setPackage(getContext().getPackageName());
         PendingIntent permissionRequest = PendingIntent.getBroadcast(getContext(), selectedDevice.getDeviceId(), permissionIntent, flags);
         usbManager.requestPermission(selectedDevice, permissionRequest);
+    }
+
+    @PluginMethod
+    public void openSerial(PluginCall call) {
+        if (usbManager == null) {
+            call.reject("Android USB host is unavailable on this device.");
+            return;
+        }
+
+        Integer deviceId = call.getInt("deviceId");
+        int baudRate = call.getInt("baudRate", 115200);
+        if (deviceId == null || baudRate <= 0) {
+            call.reject("Choose a USB device and a valid baud rate.");
+            return;
+        }
+
+        UsbDevice device = findDevice(deviceId);
+        if (device == null) {
+            call.reject("The selected USB device is no longer connected.");
+            return;
+        }
+        if (!usbManager.hasPermission(device)) {
+            call.reject("Allow USB access before opening the Serial Monitor.");
+            return;
+        }
+
+        UsbSerialDriver driver = UsbSerialProber.getDefaultProber().probeDevice(device);
+        if (driver == null || driver.getPorts().isEmpty()) {
+            call.reject("The selected USB device has no supported serial port.");
+            return;
+        }
+
+        closeSerialConnection();
+        UsbDeviceConnection connection = usbManager.openDevice(device);
+        if (connection == null) {
+            call.reject("Android could not open the selected USB device.");
+            return;
+        }
+
+        UsbSerialPort port = driver.getPorts().get(0);
+        try {
+            port.open(connection);
+            port.setParameters(baudRate, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
+
+            SerialInputOutputManager ioManager = new SerialInputOutputManager(port, new SerialInputOutputManager.Listener() {
+                @Override
+                public void onNewData(byte[] data) {
+                    JSObject event = new JSObject();
+                    event.put("data", new String(data, StandardCharsets.UTF_8));
+                    notifyListeners("serialData", event);
+                }
+
+                @Override
+                public void onRunError(Exception error) {
+                    JSObject event = new JSObject();
+                    event.put("message", error.getMessage() == null ? "Serial connection stopped." : error.getMessage());
+                    notifyListeners("serialError", event);
+                }
+            });
+            ioManager.start();
+
+            serialConnection = connection;
+            serialPort = port;
+            serialIoManager = ioManager;
+            connectedDeviceId = device.getDeviceId();
+
+            JSObject result = toDeviceDetails(driver);
+            result.put("baudRate", baudRate);
+            call.resolve(result);
+        } catch (IOException error) {
+            try {
+                port.close();
+            } catch (IOException ignored) {
+                // The original open/configuration error is more useful to the learner.
+            }
+            connection.close();
+            call.reject("Could not open the Serial Monitor: " + error.getMessage(), error);
+        }
+    }
+
+    @PluginMethod
+    public void closeSerial(PluginCall call) {
+        closeSerialConnection();
+        call.resolve();
+    }
+
+    private UsbDevice findDevice(int deviceId) {
+        for (UsbDevice device : usbManager.getDeviceList().values()) {
+            if (device.getDeviceId() == deviceId) {
+                return device;
+            }
+        }
+        return null;
+    }
+
+    private void closeSerialConnection() {
+        if (serialIoManager != null) {
+            serialIoManager.stop();
+            serialIoManager = null;
+        }
+        if (serialPort != null) {
+            try {
+                serialPort.close();
+            } catch (IOException ignored) {
+                // There is nothing else to close if the cable has already been removed.
+            }
+            serialPort = null;
+        }
+        if (serialConnection != null) {
+            serialConnection.close();
+            serialConnection = null;
+        }
+        connectedDeviceId = -1;
     }
 
     private JSObject toDeviceDetails(UsbSerialDriver driver) {

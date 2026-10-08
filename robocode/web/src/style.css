@@ -70,6 +70,11 @@ h2 { font-size: 1.15rem; }
 .usb-devices { display: grid; gap: 0.65rem; list-style: none; margin: 0; padding: 0 1.1rem 1rem; }
 .usb-devices li { align-items: center; background: #edf4f6; border-radius: 8px; display: flex; gap: 1rem; justify-content: space-between; padding: 0.7rem; }
 .usb-devices span { font-size: 0.9rem; }
+.serial-monitor { border-top: 1px solid #dce7eb; }
+.serial-controls { align-items: center; display: flex; flex-wrap: wrap; gap: 0.6rem; padding: 0.9rem 1.1rem; }
+.serial-controls label { font-weight: 800; }
+.serial-controls select { border: 1px solid #a9c1cb; border-radius: 6px; font: inherit; padding: 0.55rem; }
+#serial-output { background: #102630; color: #dcf4ff; font: 0.82rem/1.55 "Cascadia Code", Consolas, monospace; margin: 0; max-height: 22rem; min-height: 10rem; overflow: auto; padding: 1.1rem; white-space: pre-wrap; }
 
 @media (max-width: 900px) {
   .app-header { align-items: flex-start; flex-direction: column; }
@@ -78,4 +83,5 @@ h2 { font-size: 1.15rem; }
   .panel-actions, .code-actions { justify-content: flex-start; }
   .workspace-panel { min-height: 30rem; }
   .usb-devices li { align-items: flex-start; flex-direction: column; }
+  .serial-controls { align-items: flex-start; flex-direction: column; }
 }
