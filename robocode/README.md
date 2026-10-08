@@ -16,4 +16,4 @@ npm test
 npm run build
 ```
 
-The known-good expected output is in `fixtures/blink-1000ms.ino`.
+The known-good expected output is in `fixtures/blink-1000ms/blink-1000ms.ino`.
