@@ -54,6 +54,7 @@ h2 { font-size: 1.15rem; }
 .tab-button { background: #deedf1; color: #173042; }
 .tab-button[aria-selected="true"] { background: #126782; color: #fff; }
 .tab-panel { min-width: 0; }
+.tab-panel[hidden] { display: none; }
 .build-layout { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1.3fr) minmax(20rem, 0.9fr); }
 .hardware-layout { display: grid; }
 .workspace-panel, .code-panel, .usb-panel { background: #fff; border: 1px solid #cfdee3; border-radius: 12px; box-shadow: 0 6px 20px rgba(21, 58, 75, 0.08); overflow: hidden; }
