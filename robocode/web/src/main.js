@@ -177,7 +177,9 @@ function setSketchExpanded(expanded) {
 }
 
 function appendSerialOutput(text) {
-  serialOutput.textContent += text;
+  // ESP32 sketches commonly write CRLF. Normalizing it avoids Android WebView
+  // rendering a carriage return as an in-place update instead of a new line.
+  serialOutput.textContent += text.replace(/\r\n?/g, '\n');
   if (serialOutput.textContent.length > 16000) {
     serialOutput.textContent = serialOutput.textContent.slice(-16000);
   }

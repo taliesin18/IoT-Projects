@@ -339,6 +339,15 @@ public class RoboCodeUsbPlugin extends Plugin {
         }
         if (serialPort != null) {
             try {
+                // Release GPIO0 and EN before the USB bridge closes. A CP2102
+                // can otherwise leave a classic ESP32 in download/reset mode
+                // until the OTG cable is disconnected.
+                serialPort.setDTR(false);
+                serialPort.setRTS(false);
+            } catch (IOException ignored) {
+                // The port may already be gone; still close its remaining resources.
+            }
+            try {
                 serialPort.close();
             } catch (IOException ignored) {
                 // There is nothing else to close if the cable has already been removed.
