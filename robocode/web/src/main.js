@@ -3,6 +3,7 @@ import './style.css';
 import { defineRoboCodeBlocks, toolbox } from './blocks.js';
 import { generateArduinoCode } from './generator.js';
 import { createProject, loadProject } from './project.js';
+import { flashAppBinary } from './esp-flash.js';
 import {
   addSerialListener,
   closeSerial,
@@ -88,6 +89,22 @@ document.querySelector('#app').innerHTML = `
           </div>
           <pre id="serial-output" aria-live="polite">Select an ESP32 USB adapter to open the Serial Monitor.</pre>
         </div>
+        <div class="flash-panel">
+          <div class="flash-heading">
+            <div>
+              <p class="eyebrow">EXPERIMENTAL · PHONE-ONLY</p>
+              <h3>Flash an ESP32 app binary</h3>
+            </div>
+          </div>
+          <p class="hint">Choose an ESP32 <code>.bin</code> application compiled for this board. RoboCode writes it at <code>0x10000</code>; your existing bootloader and partitions stay in place.</p>
+          <div class="flash-controls">
+            <button id="flash-blink-test" class="secondary" type="button" disabled>Flash RoboCode Blink test</button>
+            <input id="app-binary" type="file" accept=".bin,application/octet-stream">
+            <button id="flash-app" type="button" disabled>Flash app .bin</button>
+          </div>
+          <progress id="flash-progress" max="100" value="0" hidden></progress>
+          <pre id="flash-output" aria-live="polite">Choose an ESP32 USB adapter, then choose a compiled app binary.</pre>
+        </div>
       </section>
     </div>
   </main>
@@ -120,6 +137,11 @@ const openSerialButton = document.querySelector('#open-serial');
 const closeSerialButton = document.querySelector('#close-serial');
 const clearSerialButton = document.querySelector('#clear-serial');
 const serialOutput = document.querySelector('#serial-output');
+const appBinaryInput = document.querySelector('#app-binary');
+const flashAppButton = document.querySelector('#flash-app');
+const flashBlinkTestButton = document.querySelector('#flash-blink-test');
+const flashProgress = document.querySelector('#flash-progress');
+const flashOutput = document.querySelector('#flash-output');
 let selectedUsbDevice = null;
 let serialListenerHandles = [];
 
@@ -162,10 +184,24 @@ function appendSerialOutput(text) {
   serialOutput.scrollTop = serialOutput.scrollHeight;
 }
 
+function appendFlashOutput(text) {
+  flashOutput.textContent += text;
+  if (flashOutput.textContent.length > 12000) {
+    flashOutput.textContent = flashOutput.textContent.slice(-12000);
+  }
+  flashOutput.scrollTop = flashOutput.scrollHeight;
+}
+
+function updateFlashButton() {
+  flashAppButton.disabled = !selectedUsbDevice || appBinaryInput.files.length === 0;
+  flashBlinkTestButton.disabled = !selectedUsbDevice;
+}
+
 function selectUsbDevice(device) {
   selectedUsbDevice = device;
   serialBaud.disabled = false;
   openSerialButton.disabled = false;
+  updateFlashButton();
   usbStatus.textContent = `USB access ready for ${device.driver}. Open the Serial Monitor at 115200 baud.`;
 }
 
@@ -230,6 +266,64 @@ async function closeSerialMonitor() {
   } finally {
     closeSerialButton.disabled = true;
     openSerialButton.disabled = selectedUsbDevice === null;
+  }
+}
+
+async function flashBinary(file) {
+  if (!selectedUsbDevice || !file) {
+    usbStatus.textContent = 'Choose an ESP32 USB adapter and a .bin app file first.';
+    return;
+  }
+
+  flashAppButton.disabled = true;
+  flashBlinkTestButton.disabled = true;
+  openSerialButton.disabled = true;
+  flashProgress.hidden = false;
+  flashProgress.value = 0;
+  flashOutput.textContent = `Preparing ${file.name} (${Math.ceil(file.size / 1024)} KB)…\n`;
+  usbStatus.textContent = 'Flashing the ESP32. Keep the OTG cable connected.';
+
+  try {
+    if (!closeSerialButton.disabled) {
+      await closeSerial();
+      closeSerialButton.disabled = true;
+    }
+    const chipName = await flashAppBinary({
+      device: selectedUsbDevice,
+      file,
+      onLog: appendFlashOutput,
+      onProgress: (written, total) => {
+        const percent = total ? Math.round((written / total) * 100) : 0;
+        flashProgress.value = percent;
+      },
+    });
+    flashProgress.value = 100;
+    usbStatus.textContent = `${chipName} flashed successfully. Open the Serial Monitor to inspect your program.`;
+    appendFlashOutput('\nFlash complete. The ESP32 was reset.\n');
+  } catch (error) {
+    usbStatus.textContent = `Flashing stopped: ${error.message}`;
+    appendFlashOutput(`\n[Flash error] ${error.message}\n`);
+  } finally {
+    openSerialButton.disabled = selectedUsbDevice === null;
+    updateFlashButton();
+  }
+}
+
+async function flashSelectedBinary() {
+  await flashBinary(appBinaryInput.files[0]);
+}
+
+async function flashBlinkTest() {
+  if (!selectedUsbDevice) return;
+
+  try {
+    const response = await fetch('/firmware/esp32-blink-1000ms/blink-1000ms.ino.bin');
+    if (!response.ok) throw new Error('The built-in Blink test file is unavailable. Reinstall the latest RoboCode APK.');
+    const bytes = await response.arrayBuffer();
+    await flashBinary(new File([bytes], 'robocode-blink-1000ms.bin', { type: 'application/octet-stream' }));
+  } catch (error) {
+    usbStatus.textContent = `Could not prepare the Blink test: ${error.message}`;
+    appendFlashOutput(`\n[Flash error] ${error.message}\n`);
   }
 }
 
@@ -349,6 +443,15 @@ hardwareTab.addEventListener('click', () => setActiveTab('hardware'));
 toggleSketchButton.addEventListener('click', () => setSketchExpanded(sketchContent.hidden));
 openSerialButton.addEventListener('click', openSerialMonitor);
 closeSerialButton.addEventListener('click', closeSerialMonitor);
+appBinaryInput.addEventListener('change', () => {
+  const [file] = appBinaryInput.files;
+  flashOutput.textContent = file
+    ? `${file.name} selected. It will be written at 0x10000.\n`
+    : 'Choose an ESP32 application binary.';
+  updateFlashButton();
+});
+flashAppButton.addEventListener('click', flashSelectedBinary);
+flashBlinkTestButton.addEventListener('click', flashBlinkTest);
 clearSerialButton.addEventListener('click', () => {
   serialOutput.textContent = '';
 });

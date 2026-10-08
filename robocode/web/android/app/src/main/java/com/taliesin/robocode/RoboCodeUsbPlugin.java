@@ -9,6 +9,7 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Build;
+import android.util.Base64;
 
 import androidx.core.content.ContextCompat;
 
@@ -38,6 +39,7 @@ public class RoboCodeUsbPlugin extends Plugin {
     private UsbSerialPort serialPort;
     private SerialInputOutputManager serialIoManager;
     private int connectedDeviceId = -1;
+    private String activeDataEvent = "serialData";
 
     @Override
     public void load() {
@@ -157,6 +159,15 @@ public class RoboCodeUsbPlugin extends Plugin {
 
     @PluginMethod
     public void openSerial(PluginCall call) {
+        openPort(call, "serialData", "Serial Monitor");
+    }
+
+    @PluginMethod
+    public void openFlashPort(PluginCall call) {
+        openPort(call, "flashData", "ESP32 flashing connection");
+    }
+
+    private void openPort(PluginCall call, String dataEvent, String connectionName) {
         if (usbManager == null) {
             call.reject("Android USB host is unavailable on this device.");
             return;
@@ -175,7 +186,7 @@ public class RoboCodeUsbPlugin extends Plugin {
             return;
         }
         if (!usbManager.hasPermission(device)) {
-            call.reject("Allow USB access before opening the Serial Monitor.");
+            call.reject("Allow USB access before opening the " + connectionName + ".");
             return;
         }
 
@@ -201,8 +212,12 @@ public class RoboCodeUsbPlugin extends Plugin {
                 @Override
                 public void onNewData(byte[] data) {
                     JSObject event = new JSObject();
-                    event.put("data", new String(data, StandardCharsets.UTF_8));
-                    notifyListeners("serialData", event);
+                    if ("flashData".equals(dataEvent)) {
+                        event.put("data", Base64.encodeToString(data, Base64.NO_WRAP));
+                    } else {
+                        event.put("data", new String(data, StandardCharsets.UTF_8));
+                    }
+                    notifyListeners(dataEvent, event);
                 }
 
                 @Override
@@ -218,6 +233,7 @@ public class RoboCodeUsbPlugin extends Plugin {
             serialPort = port;
             serialIoManager = ioManager;
             connectedDeviceId = device.getDeviceId();
+            activeDataEvent = dataEvent;
 
             JSObject result = toDeviceDetails(driver);
             result.put("baudRate", baudRate);
@@ -229,12 +245,80 @@ public class RoboCodeUsbPlugin extends Plugin {
                 // The original open/configuration error is more useful to the learner.
             }
             connection.close();
-            call.reject("Could not open the Serial Monitor: " + error.getMessage(), error);
+            call.reject("Could not open the " + connectionName + ": " + error.getMessage(), error);
+        }
+    }
+
+    @PluginMethod
+    public void writeFlash(PluginCall call) {
+        if (serialPort == null || !"flashData".equals(activeDataEvent)) {
+            call.reject("Open the ESP32 flashing connection first.");
+            return;
+        }
+
+        String encodedData = call.getString("data");
+        if (encodedData == null || encodedData.isEmpty()) {
+            call.reject("Flash data is missing.");
+            return;
+        }
+
+        try {
+            serialPort.write(Base64.decode(encodedData, Base64.DEFAULT), 5_000);
+            call.resolve();
+        } catch (IOException error) {
+            call.reject("Could not send data to the ESP32: " + error.getMessage(), error);
+        }
+    }
+
+    @PluginMethod
+    public void setFlashSignals(PluginCall call) {
+        if (serialPort == null || !"flashData".equals(activeDataEvent)) {
+            call.reject("Open the ESP32 flashing connection first.");
+            return;
+        }
+
+        try {
+            if (call.hasOption("dataTerminalReady")) {
+                serialPort.setDTR(call.getBoolean("dataTerminalReady", false));
+            }
+            if (call.hasOption("requestToSend")) {
+                serialPort.setRTS(call.getBoolean("requestToSend", false));
+            }
+            call.resolve();
+        } catch (IOException error) {
+            call.reject("Could not set the ESP32 boot signals: " + error.getMessage(), error);
+        }
+    }
+
+    @PluginMethod
+    public void setFlashBaudRate(PluginCall call) {
+        if (serialPort == null || !"flashData".equals(activeDataEvent)) {
+            call.reject("Open the ESP32 flashing connection first.");
+            return;
+        }
+
+        int baudRate = call.getInt("baudRate", 115200);
+        if (baudRate <= 0) {
+            call.reject("Choose a valid baud rate.");
+            return;
+        }
+
+        try {
+            serialPort.setParameters(baudRate, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
+            call.resolve();
+        } catch (IOException error) {
+            call.reject("Could not change the ESP32 connection speed: " + error.getMessage(), error);
         }
     }
 
     @PluginMethod
     public void closeSerial(PluginCall call) {
+        closeSerialConnection();
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void closeFlashPort(PluginCall call) {
         closeSerialConnection();
         call.resolve();
     }
@@ -266,6 +350,7 @@ public class RoboCodeUsbPlugin extends Plugin {
             serialConnection = null;
         }
         connectedDeviceId = -1;
+        activeDataEvent = "serialData";
     }
 
     private JSObject toDeviceDetails(UsbSerialDriver driver) {

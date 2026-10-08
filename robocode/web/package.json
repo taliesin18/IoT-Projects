@@ -19,6 +19,7 @@
   "dependencies": {
     "@capacitor/android": "^8.5.3",
     "@capacitor/core": "^8.5.3",
-    "blockly": "^13.3.0"
+    "blockly": "^13.3.0",
+    "esptool-js": "^0.7.0"
   }
 }

@@ -75,6 +75,14 @@ h2 { font-size: 1.15rem; }
 .serial-controls label { font-weight: 800; }
 .serial-controls select { border: 1px solid #a9c1cb; border-radius: 6px; font: inherit; padding: 0.55rem; }
 #serial-output { background: #102630; color: #dcf4ff; font: 0.82rem/1.55 "Cascadia Code", Consolas, monospace; margin: 0; max-height: 22rem; min-height: 10rem; overflow: auto; padding: 1.1rem; white-space: pre-wrap; }
+.flash-panel { border-top: 1px solid #dce7eb; }
+.flash-heading { padding: 0.9rem 1.1rem 0; }
+.flash-heading .eyebrow { color: #527082; margin-bottom: 0.2rem; }
+.flash-heading h3 { font-size: 1rem; margin: 0; }
+.flash-controls { align-items: center; display: flex; flex-wrap: wrap; gap: 0.7rem; padding: 0 1.1rem 0.9rem; }
+.flash-controls input { max-width: 100%; }
+#flash-progress { display: block; margin: 0 1.1rem 0.9rem; width: calc(100% - 2.2rem); }
+#flash-output { background: #102630; color: #dcf4ff; font: 0.82rem/1.55 "Cascadia Code", Consolas, monospace; margin: 0; max-height: 18rem; min-height: 8rem; overflow: auto; padding: 1.1rem; white-space: pre-wrap; }
 
 @media (max-width: 900px) {
   .app-header { align-items: flex-start; flex-direction: column; }

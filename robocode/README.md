@@ -49,4 +49,12 @@ The current Android wrapper proves that the existing Blockly app packages succes
 
 ### USB connection beta
 
-The Android app now detects supported USB serial adapters, including the CP2102 used by the Phase 0 board, and requests Android USB access only after the user taps **Allow USB access**. In the RoboCode Android app, connect the ESP32 through OTG, choose **Check ESP32**, grant permission for the listed device, then open the Serial Monitor. It defaults to 115200 baud; resetting the ESP32 should show its boot output. Flashing is not implemented yet.
+The Android app detects supported USB serial adapters, including the CP2102 used by the Phase 0 board, and requests Android USB access only after the user taps **Allow USB access**. In the RoboCode Android app, connect the ESP32 through OTG, choose **Check ESP32**, grant permission for the listed device, then open the Serial Monitor. It defaults to 115200 baud; resetting the ESP32 should show its boot output.
+
+### Native ESP32 flashing beta
+
+The Hardware tab can now flash an ESP32 application binary without ArduinoDroid. Start with **Flash RoboCode Blink test**: it writes the bundled GPIO 2 Blink app at the standard Arduino ESP32 application address (`0x10000`) and leaves the existing bootloader and partition table unchanged. This first test expects the same classic ESP32 / CP2102 board used in Phase 0.
+
+If the board does not automatically enter download mode, hold **BOOT**, tap **EN/RESET** once, release **BOOT**, and tap Flash again. After a successful flash, open Serial Monitor at 115200 baud to verify the program's output. **Flash app .bin** is for an ESP32 application binary compiled for the same board; it is deliberately not a generic full-device firmware installer yet.
+
+The implementation uses Espressif's Apache-2.0 licensed `esptool-js` package inside the Android app, while the Capacitor USB bridge owns Android's CP2102 connection. A successful on-device Blink flash is the acceptance test before we add RoboCode's native sketch compilation and automatic app-binary generation.
