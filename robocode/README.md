@@ -29,3 +29,20 @@ Use **Download .ino** to save the generated sketch as `robocode_blink.ino`. On a
 ## Native Android OTG work
 
 The [Phase 3.1 research and design](docs/android-native-otg-research.md) records the requirements for eventual in-app ESP32 flashing and serial monitoring. It deliberately keeps the current browser prototype independent of Android SDK tooling.
+
+## Android app wrapper
+
+The existing Vite app is packaged for Android with Capacitor; Blockly and the Arduino generator remain shared web code. From `robocode/web`:
+
+```powershell
+npm run android:sync
+npm run android:open
+```
+
+`android:sync` builds the Vite app and copies it into the Android project. The future native USB plugin belongs in that Android project; it will be exposed to the existing web UI without duplicating the Blockly editor.
+
+### Build a debug APK
+
+In Android Studio, open `robocode/web/android`. Set **Gradle JDK** to a Java 21 runtime, then use **Build → Build APK(s)**. The resulting test APK is created at `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+The current Android wrapper proves that the existing Blockly app packages successfully. It does not yet access USB devices; that is the next native-plugin task.
