@@ -6,6 +6,17 @@ import { generateArduinoCode } from '../src/generator.js';
 
 defineRoboCodeBlocks();
 
+test('starts with an empty Arduino sketch', () => {
+  const workspace = new Blockly.Workspace();
+  const code = generateArduinoCode(workspace);
+
+  assert.match(code, /void setup\(\) \{\n\}/);
+  assert.match(code, /void loop\(\) \{\n\}/);
+  assert.doesNotMatch(code, /LED_BUILTIN/);
+  assert.doesNotMatch(code, /delay\(/);
+  workspace.dispose();
+});
+
 test('generates the expected one-second blink sketch', () => {
   const workspace = new Blockly.Workspace();
   const start = workspace.newBlock('robocode_start');

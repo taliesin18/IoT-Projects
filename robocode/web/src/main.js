@@ -97,4 +97,4 @@ document.querySelector('#copy-code').addEventListener('click', async () => {
 });
 
 new ResizeObserver(() => Blockly.svgResize(workspace)).observe(document.querySelector('#blockly-div'));
-loadBlinkExample();
+updateGeneratedCode();
