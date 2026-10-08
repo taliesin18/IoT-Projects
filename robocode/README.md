@@ -25,3 +25,7 @@ Use **Save project** to download a portable `robocode-project.json` file. Use **
 ## Use the sketch on Android
 
 Use **Download .ino** to save the generated sketch as `robocode_blink.ino`. On an Android phone, open the downloaded file in ArduinoDroid, select the existing ESP32 target, then compile and upload through the known-good OTG connection.
+
+## Native Android OTG work
+
+The [Phase 3.1 research and design](docs/android-native-otg-research.md) records the requirements for eventual in-app ESP32 flashing and serial monitoring. It deliberately keeps the current browser prototype independent of Android SDK tooling.
