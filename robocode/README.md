@@ -17,3 +17,7 @@ npm run build
 ```
 
 The known-good expected output is in `fixtures/blink-1000ms/blink-1000ms.ino`.
+
+## Save and load projects
+
+Use **Save project** to download a portable `robocode-project.json` file. Use **Load project** to restore that file into the workspace. The JSON contains blocks only; generated Arduino code is recreated locally when the project is opened.

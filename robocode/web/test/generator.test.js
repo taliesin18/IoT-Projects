@@ -4,6 +4,7 @@ import test from 'node:test';
 import * as Blockly from 'blockly';
 import { defineRoboCodeBlocks } from '../src/blocks.js';
 import { generateArduinoCode } from '../src/generator.js';
+import { createProject, loadProject } from '../src/project.js';
 
 defineRoboCodeBlocks();
 
@@ -46,4 +47,20 @@ test('generates the expected one-second blink sketch', async () => {
   );
   assert.equal(code.trim(), fixture.trim());
   workspace.dispose();
+});
+
+test('round-trips a Blockly project without changing its Arduino sketch', () => {
+  const source = new Blockly.Workspace();
+  const start = source.newBlock('robocode_start');
+  const led = source.newBlock('robocode_set_builtin_led');
+  led.setFieldValue('OFF', 'STATE');
+  start.getInput('DO').connection.connect(led.previousConnection);
+
+  const project = createProject(source);
+  const restored = new Blockly.Workspace();
+  loadProject(restored, project);
+
+  assert.equal(generateArduinoCode(restored), generateArduinoCode(source));
+  source.dispose();
+  restored.dispose();
 });

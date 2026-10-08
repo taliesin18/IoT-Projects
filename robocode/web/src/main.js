@@ -2,6 +2,7 @@ import * as Blockly from 'blockly';
 import './style.css';
 import { defineRoboCodeBlocks, toolbox } from './blocks.js';
 import { generateArduinoCode } from './generator.js';
+import { createProject, loadProject } from './project.js';
 
 defineRoboCodeBlocks();
 
@@ -21,10 +22,16 @@ document.querySelector('#app').innerHTML = `
           <p class="eyebrow">1. BUILD</p>
           <h2 id="workspace-heading">Program blocks</h2>
         </div>
-        <button id="load-blink" class="secondary" type="button">Load Blink example</button>
+        <div class="panel-actions">
+          <button id="load-blink" class="secondary" type="button">Load Blink example</button>
+          <button id="save-project" class="secondary" type="button">Save project</button>
+          <button id="load-project" class="secondary" type="button">Load project</button>
+          <input id="project-file" type="file" accept="application/json,.json" hidden>
+        </div>
       </div>
       <div id="blockly-div" aria-label="Blockly programming workspace"></div>
       <p class="hint">Use one <strong>START</strong> block. Its contents repeat inside Arduino <code>loop()</code>.</p>
+      <p id="project-status" class="hint project-status" aria-live="polite">Projects are saved locally as RoboCode JSON files.</p>
     </section>
     <section class="code-panel" aria-labelledby="code-heading">
       <div class="panel-heading">
@@ -51,6 +58,8 @@ const workspace = Blockly.inject('blockly-div', {
 
 const codeElement = document.querySelector('#generated-code');
 const copyStatus = document.querySelector('#copy-status');
+const projectStatus = document.querySelector('#project-status');
+const projectFileInput = document.querySelector('#project-file');
 
 function updateGeneratedCode() {
   codeElement.textContent = generateArduinoCode(workspace);
@@ -85,6 +94,7 @@ function loadBlinkExample() {
     Blockly.Events.enable();
   }
   updateGeneratedCode();
+  projectStatus.textContent = 'Blink example loaded.';
 }
 
 workspace.addChangeListener((event) => {
@@ -92,6 +102,34 @@ workspace.addChangeListener((event) => {
 });
 
 document.querySelector('#load-blink').addEventListener('click', loadBlinkExample);
+document.querySelector('#save-project').addEventListener('click', () => {
+  const project = createProject(workspace);
+  const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const download = document.createElement('a');
+  download.href = url;
+  download.download = 'robocode-project.json';
+  download.click();
+  URL.revokeObjectURL(url);
+  projectStatus.textContent = 'Project saved as robocode-project.json.';
+});
+
+document.querySelector('#load-project').addEventListener('click', () => projectFileInput.click());
+projectFileInput.addEventListener('change', async () => {
+  const [file] = projectFileInput.files;
+  if (!file) return;
+
+  try {
+    loadProject(workspace, JSON.parse(await file.text()));
+    updateGeneratedCode();
+    projectStatus.textContent = `Loaded ${file.name}.`;
+  } catch (error) {
+    projectStatus.textContent = `Could not load ${file.name}: ${error.message}`;
+  } finally {
+    projectFileInput.value = '';
+  }
+});
+
 document.querySelector('#copy-code').addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(codeElement.textContent);
