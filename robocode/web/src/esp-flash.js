@@ -101,7 +101,7 @@ function formatFlashError(error) {
   return message;
 }
 
-export async function flashAppBinary({ device, file, onLog, onProgress }) {
+export async function flashFirmware({ device, parts, onLog, onProgress }) {
   const nativePort = new RoboCodeNativeSerialPort(device);
   const transport = new Transport(nativePort, false);
   const terminal = {
@@ -120,15 +120,24 @@ export async function flashAppBinary({ device, file, onLog, onProgress }) {
     const chipName = await loader.main('default_reset');
     onLog(`Connected to ${chipName}.\n`);
 
-    const firmware = new Uint8Array(await file.arrayBuffer());
+    const preparedParts = await Promise.all(parts.map(async ({ file, address }) => ({
+      data: new Uint8Array(await file.arrayBuffer()),
+      address,
+    })));
+    const totalBytes = preparedParts.reduce((total, part) => total + part.data.length, 0);
     await loader.writeFlash({
-      fileArray: [{ data: firmware, address: 0x10000 }],
+      fileArray: preparedParts,
       flashMode: 'dio',
       flashFreq: '40m',
       flashSize: '4MB',
       eraseAll: false,
       compress: true,
-      reportProgress: (_fileIndex, written, total) => onProgress(written, total),
+      reportProgress: (fileIndex, written) => {
+        const completedBeforeFile = preparedParts
+          .slice(0, fileIndex)
+          .reduce((total, part) => total + part.data.length, 0);
+        onProgress(completedBeforeFile + written, totalBytes);
+      },
     });
     await loader.after('hard_reset');
     return chipName;
@@ -137,4 +146,13 @@ export async function flashAppBinary({ device, file, onLog, onProgress }) {
   } finally {
     await transport.disconnect().catch(() => {});
   }
+}
+
+export function flashAppBinary({ device, file, onLog, onProgress }) {
+  return flashFirmware({
+    device,
+    parts: [{ file, address: 0x10000 }],
+    onLog,
+    onProgress,
+  });
 }

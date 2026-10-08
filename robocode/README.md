@@ -53,7 +53,7 @@ The Android app detects supported USB serial adapters, including the CP2102 used
 
 ### Native ESP32 flashing beta
 
-The Hardware tab can now flash an ESP32 application binary without ArduinoDroid. Start with **Flash RoboCode Blink test**: it writes the bundled GPIO 2 Blink app at the standard Arduino ESP32 application address (`0x10000`) and leaves the existing bootloader and partition table unchanged. This first test expects the same classic ESP32 / CP2102 board used in Phase 0.
+The Hardware tab can now flash an ESP32 application binary without ArduinoDroid. Start with **Flash RoboCode Blink test**: it writes a bundled, matching bootloader, partition table, OTA selector, and GPIO 2 Blink app to the standard classic-ESP32 addresses. It prints `LED ON` and `LED OFF` at 115200 baud, so Serial Monitor verifies the result even if a board's built-in LED is wired differently. This first test expects the same classic ESP32 / CP2102 board used in Phase 0.
 
 If the board does not automatically enter download mode, hold **BOOT**, tap **EN/RESET** once, release **BOOT**, and tap Flash again. After a successful flash, open Serial Monitor at 115200 baud to verify the program's output. **Flash app .bin** is for an ESP32 application binary compiled for the same board; it is deliberately not a generic full-device firmware installer yet.
 

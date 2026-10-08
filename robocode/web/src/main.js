@@ -3,7 +3,7 @@ import './style.css';
 import { defineRoboCodeBlocks, toolbox } from './blocks.js';
 import { generateArduinoCode } from './generator.js';
 import { createProject, loadProject } from './project.js';
-import { flashAppBinary } from './esp-flash.js';
+import { flashFirmware } from './esp-flash.js';
 import {
   addSerialListener,
   closeSerial,
@@ -96,7 +96,7 @@ document.querySelector('#app').innerHTML = `
               <h3>Flash an ESP32 app binary</h3>
             </div>
           </div>
-          <p class="hint">Choose an ESP32 <code>.bin</code> application compiled for this board. RoboCode writes it at <code>0x10000</code>; your existing bootloader and partitions stay in place.</p>
+          <p class="hint">The built-in test writes a complete matching classic-ESP32 firmware bundle. Or choose an ESP32 <code>.bin</code> application compiled for this board; RoboCode writes an app file at <code>0x10000</code>.</p>
           <div class="flash-controls">
             <button id="flash-blink-test" class="secondary" type="button" disabled>Flash RoboCode Blink test</button>
             <input id="app-binary" type="file" accept=".bin,application/octet-stream">
@@ -269,8 +269,8 @@ async function closeSerialMonitor() {
   }
 }
 
-async function flashBinary(file) {
-  if (!selectedUsbDevice || !file) {
+async function flashFiles(parts, label) {
+  if (!selectedUsbDevice || parts.length === 0) {
     usbStatus.textContent = 'Choose an ESP32 USB adapter and a .bin app file first.';
     return;
   }
@@ -280,7 +280,8 @@ async function flashBinary(file) {
   openSerialButton.disabled = true;
   flashProgress.hidden = false;
   flashProgress.value = 0;
-  flashOutput.textContent = `Preparing ${file.name} (${Math.ceil(file.size / 1024)} KB)…\n`;
+  const totalBytes = parts.reduce((total, part) => total + part.file.size, 0);
+  flashOutput.textContent = `Preparing ${label} (${Math.ceil(totalBytes / 1024)} KB)…\n`;
   usbStatus.textContent = 'Flashing the ESP32. Keep the OTG cable connected.';
 
   try {
@@ -288,9 +289,9 @@ async function flashBinary(file) {
       await closeSerial();
       closeSerialButton.disabled = true;
     }
-    const chipName = await flashAppBinary({
+    const chipName = await flashFirmware({
       device: selectedUsbDevice,
-      file,
+      parts,
       onLog: appendFlashOutput,
       onProgress: (written, total) => {
         const percent = total ? Math.round((written / total) * 100) : 0;
@@ -310,17 +311,29 @@ async function flashBinary(file) {
 }
 
 async function flashSelectedBinary() {
-  await flashBinary(appBinaryInput.files[0]);
+  const [file] = appBinaryInput.files;
+  await flashFiles([{ file, address: 0x10000 }], file?.name || 'app binary');
 }
 
 async function flashBlinkTest() {
   if (!selectedUsbDevice) return;
 
   try {
-    const response = await fetch('/firmware/esp32-blink-1000ms/blink-1000ms.ino.bin');
-    if (!response.ok) throw new Error('The built-in Blink test file is unavailable. Reinstall the latest RoboCode APK.');
-    const bytes = await response.arrayBuffer();
-    await flashBinary(new File([bytes], 'robocode-blink-1000ms.bin', { type: 'application/octet-stream' }));
+    const files = await Promise.all([
+      ['bootloader', '/firmware/esp32-native-flash-test/esp32-blink-test.ino.bootloader.bin', 0x1000],
+      ['partitions', '/firmware/esp32-native-flash-test/esp32-blink-test.ino.partitions.bin', 0x8000],
+      ['OTA selector', '/firmware/esp32-native-flash-test/boot_app0.bin', 0xe000],
+      ['application', '/firmware/esp32-native-flash-test/esp32-blink-test.ino.bin', 0x10000],
+    ].map(async ([name, url, address]) => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('The built-in test files are unavailable. Reinstall the latest RoboCode APK.');
+      const bytes = await response.arrayBuffer();
+      return {
+        file: new File([bytes], `robocode-${name}.bin`, { type: 'application/octet-stream' }),
+        address,
+      };
+    }));
+    await flashFiles(files, 'RoboCode Blink test bundle');
   } catch (error) {
     usbStatus.textContent = `Could not prepare the Blink test: ${error.message}`;
     appendFlashOutput(`\n[Flash error] ${error.message}\n`);
