@@ -23,7 +23,7 @@ button {
 button:hover { background: #0d5268; }
 button.secondary { background: #deedf1; color: #173042; }
 button.secondary:hover { background: #c9e1e8; }
-.panel-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; }
+.panel-actions, .code-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; }
 
 .app-header {
   align-items: center;
@@ -68,6 +68,6 @@ h2 { font-size: 1.15rem; }
   .app-header { align-items: flex-start; flex-direction: column; }
   .app-main { grid-template-columns: 1fr; }
   .panel-heading { align-items: flex-start; flex-direction: column; }
-  .panel-actions { justify-content: flex-start; }
+  .panel-actions, .code-actions { justify-content: flex-start; }
   .workspace-panel, .code-panel { min-height: 30rem; }
 }

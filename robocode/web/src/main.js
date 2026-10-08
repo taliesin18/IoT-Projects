@@ -39,7 +39,10 @@ document.querySelector('#app').innerHTML = `
           <p class="eyebrow">2. REVIEW</p>
           <h2 id="code-heading">Generated Arduino sketch</h2>
         </div>
-        <button id="copy-code" type="button">Copy .ino</button>
+        <div class="code-actions">
+          <button id="download-code" type="button">Download .ino</button>
+          <button id="copy-code" class="secondary" type="button">Copy code</button>
+        </div>
       </div>
       <pre><code id="generated-code"></code></pre>
       <p id="copy-status" class="hint" aria-live="polite">The sketch is generated locally from your blocks.</p>
@@ -63,6 +66,18 @@ const projectFileInput = document.querySelector('#project-file');
 
 function updateGeneratedCode() {
   codeElement.textContent = generateArduinoCode(workspace);
+}
+
+function downloadFile(contents, filename, type) {
+  const blob = new Blob([contents], { type });
+  const url = URL.createObjectURL(blob);
+  const download = document.createElement('a');
+  download.href = url;
+  download.download = filename;
+  document.body.append(download);
+  download.click();
+  download.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function loadBlinkExample() {
@@ -104,13 +119,7 @@ workspace.addChangeListener((event) => {
 document.querySelector('#load-blink').addEventListener('click', loadBlinkExample);
 document.querySelector('#save-project').addEventListener('click', () => {
   const project = createProject(workspace);
-  const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const download = document.createElement('a');
-  download.href = url;
-  download.download = 'robocode-project.json';
-  download.click();
-  URL.revokeObjectURL(url);
+  downloadFile(JSON.stringify(project, null, 2), 'robocode-project.json', 'application/json');
   projectStatus.textContent = 'Project saved as robocode-project.json.';
 });
 
@@ -137,6 +146,11 @@ document.querySelector('#copy-code').addEventListener('click', async () => {
   } catch {
     copyStatus.textContent = 'Copy was blocked by the browser. Select the code and copy it manually.';
   }
+});
+
+document.querySelector('#download-code').addEventListener('click', () => {
+  downloadFile(codeElement.textContent, 'robocode_blink.ino', 'text/x-arduino');
+  copyStatus.textContent = 'Downloaded robocode_blink.ino. Open it in ArduinoDroid, then compile and upload.';
 });
 
 new ResizeObserver(() => Blockly.svgResize(workspace)).observe(document.querySelector('#blockly-div'));
