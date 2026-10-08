@@ -66,6 +66,10 @@ function loadBlinkExample() {
     const ledOff = workspace.newBlock('robocode_set_builtin_led');
     const waitOff = workspace.newBlock('robocode_wait_ms');
 
+    for (const block of [start, ledOn, waitOn, ledOff, waitOff]) {
+      block.initSvg();
+    }
+
     ledOn.setFieldValue('ON', 'STATE');
     waitOn.setFieldValue(1000, 'MILLISECONDS');
     ledOff.setFieldValue('OFF', 'STATE');
@@ -75,6 +79,7 @@ function loadBlinkExample() {
     ledOn.nextConnection.connect(waitOn.previousConnection);
     waitOn.nextConnection.connect(ledOff.previousConnection);
     ledOff.nextConnection.connect(waitOff.previousConnection);
+    start.render();
     start.moveBy(48, 44);
   } finally {
     Blockly.Events.enable();
