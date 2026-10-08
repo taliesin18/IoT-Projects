@@ -46,3 +46,7 @@ npm run android:open
 In Android Studio, open `robocode/web/android`. Set **Gradle JDK** to a Java 21 runtime, then use **Build → Build APK(s)**. The resulting test APK is created at `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 The current Android wrapper proves that the existing Blockly app packages successfully. It does not yet access USB devices; that is the next native-plugin task.
+
+### USB connection beta
+
+The Android app now detects supported USB serial adapters, including the CP2102 used by the Phase 0 board, and requests Android USB access only after the user taps **Allow USB access**. It does not flash the board or open the serial monitor yet. In the RoboCode Android app, connect the ESP32 through OTG, choose **Check ESP32**, then grant the Android permission for the listed device.

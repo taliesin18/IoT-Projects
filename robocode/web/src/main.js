@@ -3,6 +3,7 @@ import './style.css';
 import { defineRoboCodeBlocks, toolbox } from './blocks.js';
 import { generateArduinoCode } from './generator.js';
 import { createProject, loadProject } from './project.js';
+import { isNativeRoboCodeApp, listUsbDevices, requestUsbPermission } from './usb.js';
 
 defineRoboCodeBlocks();
 
@@ -47,6 +48,17 @@ document.querySelector('#app').innerHTML = `
       <pre><code id="generated-code"></code></pre>
       <p id="copy-status" class="hint" aria-live="polite">The sketch is generated locally from your blocks.</p>
     </section>
+    <section class="usb-panel" aria-labelledby="usb-heading">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">3. CONNECT · ANDROID BETA</p>
+          <h2 id="usb-heading">ESP32 USB connection</h2>
+        </div>
+        <button id="check-usb" type="button">Check ESP32</button>
+      </div>
+      <p id="usb-status" class="hint" aria-live="polite"></p>
+      <ul id="usb-devices" class="usb-devices" aria-live="polite"></ul>
+    </section>
   </main>
 `;
 
@@ -63,6 +75,9 @@ const codeElement = document.querySelector('#generated-code');
 const copyStatus = document.querySelector('#copy-status');
 const projectStatus = document.querySelector('#project-status');
 const projectFileInput = document.querySelector('#project-file');
+const usbStatus = document.querySelector('#usb-status');
+const usbDevices = document.querySelector('#usb-devices');
+const checkUsbButton = document.querySelector('#check-usb');
 
 function updateGeneratedCode() {
   codeElement.textContent = generateArduinoCode(workspace);
@@ -78,6 +93,59 @@ function downloadFile(contents, filename, type) {
   download.click();
   download.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function showUsbDevice(device) {
+  const item = document.createElement('li');
+  const details = document.createElement('span');
+  const name = [device.manufacturer, device.product].filter(Boolean).join(' ');
+  details.textContent = `${name || 'Supported USB serial device'} · ${device.driver} · ${device.vendorId}:${device.productId}`;
+  item.append(details);
+
+  const permissionButton = document.createElement('button');
+  permissionButton.className = 'secondary';
+  permissionButton.type = 'button';
+  permissionButton.textContent = device.permissionGranted ? 'USB access ready' : 'Allow USB access';
+  permissionButton.disabled = device.permissionGranted;
+  permissionButton.addEventListener('click', async () => {
+    permissionButton.disabled = true;
+    usbStatus.textContent = 'Waiting for Android USB permission…';
+    try {
+      const grantedDevice = await requestUsbPermission(device.deviceId);
+      usbStatus.textContent = `USB access ready for ${grantedDevice.driver}. Flashing and Serial Monitor are the next step.`;
+      permissionButton.textContent = 'USB access ready';
+    } catch (error) {
+      permissionButton.disabled = false;
+      usbStatus.textContent = `USB access was not granted: ${error.message}`;
+    }
+  });
+  item.append(permissionButton);
+  usbDevices.append(item);
+}
+
+async function checkUsbConnection() {
+  if (!isNativeRoboCodeApp()) {
+    usbStatus.textContent = 'USB detection is available in the RoboCode Android app. The browser version keeps using ArduinoDroid.';
+    return;
+  }
+
+  checkUsbButton.disabled = true;
+  usbStatus.textContent = 'Looking for supported USB serial devices…';
+  usbDevices.replaceChildren();
+  try {
+    const { devices } = await listUsbDevices();
+    if (devices.length === 0) {
+      usbStatus.textContent = 'No supported USB serial device found. Connect the ESP32 through OTG, then try again.';
+      return;
+    }
+
+    usbStatus.textContent = 'Choose the ESP32 USB adapter and allow RoboCode to use it.';
+    devices.forEach(showUsbDevice);
+  } catch (error) {
+    usbStatus.textContent = `Could not check USB devices: ${error.message}`;
+  } finally {
+    checkUsbButton.disabled = false;
+  }
 }
 
 function loadBlinkExample() {
@@ -152,6 +220,10 @@ document.querySelector('#download-code').addEventListener('click', () => {
   downloadFile(codeElement.textContent, 'robocode_blink.ino', 'text/x-arduino');
   copyStatus.textContent = 'Downloaded robocode_blink.ino. Open it in ArduinoDroid, then compile and upload.';
 });
+checkUsbButton.addEventListener('click', checkUsbConnection);
 
 new ResizeObserver(() => Blockly.svgResize(workspace)).observe(document.querySelector('#blockly-div'));
 updateGeneratedCode();
+usbStatus.textContent = isNativeRoboCodeApp()
+  ? 'Connect your ESP32 through OTG, then choose Check ESP32.'
+  : 'USB detection is available in the RoboCode Android app. The browser version keeps using ArduinoDroid.';

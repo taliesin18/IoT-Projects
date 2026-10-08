@@ -54,6 +54,7 @@ h2 { font-size: 1.15rem; }
 }
 
 .workspace-panel, .code-panel { background: #fff; border: 1px solid #cfdee3; border-radius: 12px; box-shadow: 0 6px 20px rgba(21, 58, 75, 0.08); min-height: 34rem; overflow: hidden; }
+.usb-panel { background: #fff; border: 1px solid #cfdee3; border-radius: 12px; box-shadow: 0 6px 20px rgba(21, 58, 75, 0.08); grid-column: 1 / -1; overflow: hidden; }
 .panel-heading { align-items: center; border-bottom: 1px solid #dce7eb; display: flex; gap: 1rem; justify-content: space-between; padding: 1rem 1.1rem; }
 .panel-heading .eyebrow { color: #527082; margin-bottom: 0.2rem; }
 #blockly-div { height: calc(100% - 8.8rem); min-height: 28rem; width: 100%; }
@@ -63,6 +64,9 @@ h2 { font-size: 1.15rem; }
 .code-panel { display: flex; flex-direction: column; }
 .code-panel pre { background: #102630; color: #dcf4ff; flex: 1; font: 0.82rem/1.55 "Cascadia Code", Consolas, monospace; margin: 0; overflow: auto; padding: 1.25rem; tab-size: 2; }
 .code-panel code { white-space: pre; }
+.usb-devices { display: grid; gap: 0.65rem; list-style: none; margin: 0; padding: 0 1.1rem 1rem; }
+.usb-devices li { align-items: center; background: #edf4f6; border-radius: 8px; display: flex; gap: 1rem; justify-content: space-between; padding: 0.7rem; }
+.usb-devices span { font-size: 0.9rem; }
 
 @media (max-width: 900px) {
   .app-header { align-items: flex-start; flex-direction: column; }
@@ -70,4 +74,5 @@ h2 { font-size: 1.15rem; }
   .panel-heading { align-items: flex-start; flex-direction: column; }
   .panel-actions, .code-actions { justify-content: flex-start; }
   .workspace-panel, .code-panel { min-height: 30rem; }
+  .usb-devices li { align-items: flex-start; flex-direction: column; }
 }
