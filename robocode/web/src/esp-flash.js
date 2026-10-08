@@ -128,7 +128,7 @@ export async function flashFirmware({ device, parts, onLog, onProgress }) {
     await loader.writeFlash({
       fileArray: preparedParts,
       flashMode: 'dio',
-      flashFreq: '40m',
+      flashFreq: '80m',
       flashSize: '4MB',
       eraseAll: false,
       compress: true,
