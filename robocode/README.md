@@ -58,3 +58,19 @@ The Hardware tab can now flash an ESP32 application binary without ArduinoDroid.
 If the board does not automatically enter download mode, hold **BOOT**, tap **EN/RESET** once, release **BOOT**, and tap Flash again. After a successful flash, open Serial Monitor at 115200 baud to verify the program's output. **Flash app .bin** is for an ESP32 application binary compiled for the same board; it is deliberately not a generic full-device firmware installer yet.
 
 The implementation uses Espressif's Apache-2.0 licensed `esptool-js` package inside the Android app, while the Capacitor USB bridge owns Android's CP2102 connection. A successful on-device Blink flash is the acceptance test before we add RoboCode's native sketch compilation and automatic app-binary generation.
+
+## Phase 3.3 — Compile blocks and flash
+
+RoboCode can now send the generated block sketch to a small compiler service running on the prepared PC, receive the complete classic-ESP32 firmware bundle, and flash it through the Android app. This is a local-Wi-Fi development workflow: the phone, PC, and ESP32 stay in your own network; no source code is sent to a cloud compiler.
+
+From `robocode/web`, start the service with the Arduino CLI paths already prepared on this PC:
+
+```powershell
+$env:ARDUINO_CLI_PATH = 'C:\work\local\tools\arduino-cli\arduino-cli.exe'
+$env:ARDUINO_CLI_CONFIG = 'C:\work\local\tools\arduino-cli\arduino-cli.yaml'
+npm run compiler
+```
+
+Copy the **Phone URL** and **Access token** it prints into **Hardware → Compile blocks and flash** in the RoboCode Android app. Select the CP2102 device, choose **Check compiler**, then choose **Compile blocks & flash**.
+
+See [the Phase 3.3 setup guide](docs/phase-3.3-local-compiler.md) for security notes, recovery, and the exact firmware segments.

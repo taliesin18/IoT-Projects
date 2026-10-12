@@ -3,6 +3,7 @@ import './style.css';
 import { defineRoboCodeBlocks, toolbox } from './blocks.js';
 import { generateArduinoCode } from './generator.js';
 import { createProject, loadProject } from './project.js';
+import { checkCompiler, compileGeneratedSketch, loadCompilerSettings, saveCompilerSettings } from './compiler.js';
 import { flashFirmware } from './esp-flash.js';
 import {
   addSerialListener,
@@ -76,6 +77,25 @@ document.querySelector('#app').innerHTML = `
         </div>
         <p id="usb-status" class="hint" aria-live="polite"></p>
         <ul id="usb-devices" class="usb-devices" aria-live="polite"></ul>
+        <div class="compiler-panel">
+          <div class="flash-heading">
+            <div>
+              <p class="eyebrow">3.3 · LOCAL WI-FI COMPILER</p>
+              <h3>Compile blocks and flash</h3>
+            </div>
+          </div>
+          <p class="hint">Run RoboCode's compiler on your prepared PC, then enter the PC URL and access token shown there. The sketch stays on your local network.</p>
+          <div class="compiler-controls">
+            <label for="compiler-url">PC URL</label>
+            <input id="compiler-url" type="url" inputmode="url" placeholder="http://192.168.x.x:8787" autocomplete="off">
+            <label for="compiler-token">Access token</label>
+            <input id="compiler-token" type="password" autocomplete="off" placeholder="Shown by the PC compiler">
+            <button id="save-compiler" class="secondary" type="button">Save connection</button>
+            <button id="check-compiler" class="secondary" type="button">Check compiler</button>
+            <button id="compile-blocks" type="button" disabled>Compile blocks &amp; flash</button>
+          </div>
+          <pre id="compiler-output" aria-live="polite">Start the PC compiler, enter its URL and token, then choose an ESP32 USB adapter.</pre>
+        </div>
         <div class="serial-monitor">
           <div class="serial-controls">
             <label for="serial-baud">Serial Monitor</label>
@@ -142,6 +162,12 @@ const flashAppButton = document.querySelector('#flash-app');
 const flashBlinkTestButton = document.querySelector('#flash-blink-test');
 const flashProgress = document.querySelector('#flash-progress');
 const flashOutput = document.querySelector('#flash-output');
+const compilerUrl = document.querySelector('#compiler-url');
+const compilerToken = document.querySelector('#compiler-token');
+const saveCompilerButton = document.querySelector('#save-compiler');
+const checkCompilerButton = document.querySelector('#check-compiler');
+const compileBlocksButton = document.querySelector('#compile-blocks');
+const compilerOutput = document.querySelector('#compiler-output');
 let selectedUsbDevice = null;
 let serialListenerHandles = [];
 
@@ -199,11 +225,16 @@ function updateFlashButton() {
   flashBlinkTestButton.disabled = !selectedUsbDevice;
 }
 
+function updateCompileButton() {
+  compileBlocksButton.disabled = !selectedUsbDevice || !compilerUrl.value.trim() || !compilerToken.value.trim();
+}
+
 function selectUsbDevice(device) {
   selectedUsbDevice = device;
   serialBaud.disabled = false;
   openSerialButton.disabled = false;
   updateFlashButton();
+  updateCompileButton();
   usbStatus.textContent = `USB access ready for ${device.driver}. Open the Serial Monitor at 115200 baud.`;
 }
 
@@ -279,6 +310,7 @@ async function flashFiles(parts, label) {
 
   flashAppButton.disabled = true;
   flashBlinkTestButton.disabled = true;
+  compileBlocksButton.disabled = true;
   openSerialButton.disabled = true;
   flashProgress.hidden = false;
   flashProgress.value = 0;
@@ -309,6 +341,55 @@ async function flashFiles(parts, label) {
   } finally {
     openSerialButton.disabled = selectedUsbDevice === null;
     updateFlashButton();
+    updateCompileButton();
+  }
+}
+
+function saveCompilerConnection() {
+  try {
+    const settings = saveCompilerSettings({ url: compilerUrl.value, token: compilerToken.value });
+    compilerUrl.value = settings.url;
+    compilerToken.value = settings.token;
+    compilerOutput.textContent = 'Compiler connection saved on this device.';
+  } catch (error) {
+    compilerOutput.textContent = `Could not save the compiler connection: ${error.message}`;
+  }
+  updateCompileButton();
+}
+
+async function checkCompilerConnection() {
+  checkCompilerButton.disabled = true;
+  compilerOutput.textContent = 'Checking the PC compiler…';
+  try {
+    const result = await checkCompiler(compilerUrl.value);
+    compilerOutput.textContent = `Compiler ready for ${result.fqbn}.`;
+  } catch (error) {
+    compilerOutput.textContent = `Compiler check failed: ${error.message}`;
+  } finally {
+    checkCompilerButton.disabled = false;
+  }
+}
+
+async function compileBlocksAndFlash() {
+  if (!selectedUsbDevice) {
+    usbStatus.textContent = 'Choose an ESP32 USB adapter first.';
+    return;
+  }
+
+  compileBlocksButton.disabled = true;
+  compilerOutput.textContent = 'Sending your generated sketch to the local PC compiler…';
+  try {
+    const result = await compileGeneratedSketch({
+      url: compilerUrl.value,
+      token: compilerToken.value,
+      sketch: codeElement.textContent,
+    });
+    const size = result.parts.reduce((total, part) => total + part.file.size, 0);
+    compilerOutput.textContent = `Compiled ${result.fqbn} (${Math.ceil(size / 1024)} KB firmware bundle, sketch ${result.sketchHash}).`;
+    await flashFiles(result.parts, 'your Blockly program');
+  } catch (error) {
+    compilerOutput.textContent = `Compilation failed: ${error.message}`;
+    updateCompileButton();
   }
 }
 
@@ -465,6 +546,11 @@ appBinaryInput.addEventListener('change', () => {
     : 'Choose an ESP32 application binary.';
   updateFlashButton();
 });
+saveCompilerButton.addEventListener('click', saveCompilerConnection);
+checkCompilerButton.addEventListener('click', checkCompilerConnection);
+compileBlocksButton.addEventListener('click', compileBlocksAndFlash);
+compilerUrl.addEventListener('input', updateCompileButton);
+compilerToken.addEventListener('input', updateCompileButton);
 flashAppButton.addEventListener('click', flashSelectedBinary);
 flashBlinkTestButton.addEventListener('click', flashBlinkTest);
 clearSerialButton.addEventListener('click', () => {
@@ -474,6 +560,10 @@ clearSerialButton.addEventListener('click', () => {
 new ResizeObserver(() => Blockly.svgResize(workspace)).observe(document.querySelector('#blockly-div'));
 updateGeneratedCode();
 setSketchExpanded(false);
+const savedCompilerSettings = loadCompilerSettings();
+compilerUrl.value = savedCompilerSettings.url;
+compilerToken.value = savedCompilerSettings.token;
+updateCompileButton();
 usbStatus.textContent = isNativeRoboCodeApp()
   ? 'Connect your ESP32 through OTG, then choose Check ESP32.'
   : 'USB detection is available in the RoboCode Android app. The browser version keeps using ArduinoDroid.';
