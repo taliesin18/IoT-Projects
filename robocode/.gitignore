@@ -1,0 +1,6 @@
+.idea/
+firmware/esp32-blink-test/build/
+.compiler-cache/
+web/android/app/src/main/jniLibs/
+web/android/app/src/main/assets/compiler/
+web/android/app/src/debug/jniLibs/
