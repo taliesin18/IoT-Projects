@@ -26,13 +26,11 @@ defineRoboCodeBlocks();
 
 document.querySelector('#app').innerHTML = `
   <header class="app-header">
-    <div class="brand-lockup">
-      <div class="brand-mark" aria-hidden="true"><span>R</span><i></i><b></b></div>
-      <div>
-        <p class="brand-kicker">ROBOCODE <span>PHASE 1</span></p>
-        <h1>Build ideas that come alive.</h1>
-        <p class="subtitle">Make real ESP32 projects with blocks — then test them on your board.</p>
-      </div>
+    <div class="brand-mark" aria-hidden="true"><span>R</span><i></i><b></b></div>
+    <div class="brand-message">
+      <p class="brand-kicker">ROBOCODE <span>PHASE 1</span></p>
+      <h1>Build ideas that come alive.</h1>
+      <p class="subtitle">Make real ESP32 projects with blocks — then test them on your board.</p>
     </div>
     <div class="header-side">
       <div class="journey" aria-label="RoboCode learning path">
@@ -73,8 +71,6 @@ document.querySelector('#app').innerHTML = `
         <p class="project-intro">When your program is taking shape, come here to save it, open it again, or move pieces between programs. Your usual journey is <strong>Project → Build → Hardware</strong>.</p>
         <div class="project-actions-grid">
           <button id="new-project" class="project-action" type="button"><span class="action-icon" aria-hidden="true">✨</span><span>New project</span><small>Start with one empty START block</small></button>
-          <button id="copy-blocks" class="project-action" type="button"><span class="action-icon" aria-hidden="true">📋</span><span>Copy blocks</span><small>Copy the selected stack</small></button>
-          <button id="paste-blocks" class="project-action" type="button"><span class="action-icon" aria-hidden="true">📌</span><span>Paste blocks</span><small>Add your copied stack</small></button>
           <button id="save-project" class="project-action" type="button"><span class="action-icon" aria-hidden="true">💾</span><span>Save project</span><small>Keep your blocks as a RoboCode file</small></button>
           <button id="load-project" class="project-action" type="button"><span class="action-icon" aria-hidden="true">📂</span><span>Open project</span><small>Continue a saved RoboCode file</small></button>
           <button id="copy-code" class="project-action" type="button"><span class="action-icon" aria-hidden="true">📄</span><span>Copy .ino</span><small>Copy the Arduino sketch</small></button>
@@ -91,9 +87,15 @@ document.querySelector('#app').innerHTML = `
             <p class="eyebrow">1. BUILD</p>
             <h2 id="workspace-heading">Program blocks</h2>
           </div>
+          <div class="panel-actions workspace-actions" aria-label="Block workspace actions">
+            <button id="copy-blocks" class="secondary compact-icon-action" type="button"><span aria-hidden="true">📋</span><small>Copy</small></button>
+            <button id="paste-blocks" class="secondary compact-icon-action" type="button"><span aria-hidden="true">📌</span><small>Paste</small></button>
+            <button id="toggle-toolbox" class="secondary compact-icon-action" type="button" aria-controls="blockly-div" aria-expanded="true"><span aria-hidden="true">◀</span><small>Hide blocks</small></button>
+          </div>
         </div>
         <div id="blockly-div" aria-label="Blockly programming workspace"></div>
-        <p class="hint">Use one <strong>START</strong> block. Its contents repeat inside Arduino <code>loop()</code>.</p>
+        <p class="hint workspace-footer">Use one <strong>START</strong> block. Its contents repeat inside Arduino <code>loop()</code>.</p>
+        <p id="build-status" class="hint build-status" aria-live="polite" hidden></p>
       </section>
       <section class="code-panel" aria-labelledby="code-heading">
         <div class="panel-heading">
@@ -237,6 +239,7 @@ workspace.registerButtonCallback('CREATE_LOCAL_VARIABLE', (button) => {
 const codeElement = document.querySelector('#generated-code');
 const copyStatus = document.querySelector('#copy-status');
 const projectStatus = document.querySelector('#project-status');
+const buildStatus = document.querySelector('#build-status');
 const projectFileInput = document.querySelector('#project-file');
 const usbStatus = document.querySelector('#usb-status');
 const usbDevices = document.querySelector('#usb-devices');
@@ -258,6 +261,8 @@ const toggleSketchButton = document.querySelector('#toggle-sketch');
 const sketchContent = document.querySelector('#sketch-content');
 const copyBlocksButton = document.querySelector('#copy-blocks');
 const pasteBlocksButton = document.querySelector('#paste-blocks');
+const toggleToolboxButton = document.querySelector('#toggle-toolbox');
+const blocklyDiv = document.querySelector('#blockly-div');
 const serialBaud = document.querySelector('#serial-baud');
 const openSerialButton = document.querySelector('#open-serial');
 const closeSerialButton = document.querySelector('#close-serial');
@@ -294,6 +299,7 @@ let copiedBlockState = null;
 let lastSelectedBlockId = null;
 let pasteCount = 0;
 let lastPhoneBuild = null;
+let toolboxCollapsed = false;
 
 function updateGeneratedCode() {
   const sketch = generateArduinoCode(workspace);
@@ -307,6 +313,24 @@ function updateGeneratedCode() {
 function setBoardStatus(message, state = 'idle') {
   boardStatus.textContent = message;
   boardStatus.dataset.state = state;
+}
+
+function setProjectStatus(message) {
+  projectStatus.textContent = message;
+  buildStatus.hidden = false;
+  buildStatus.textContent = message;
+}
+
+function setToolboxCollapsed(collapsed) {
+  const toolboxControl = workspace.getToolbox();
+  if (!toolboxControl) return;
+  toolboxCollapsed = collapsed;
+  toolboxControl.setVisible(!collapsed);
+  blocklyDiv.classList.toggle('toolbox-collapsed', collapsed);
+  toggleToolboxButton.setAttribute('aria-expanded', String(!collapsed));
+  toggleToolboxButton.querySelector('span').textContent = collapsed ? '▶' : '◀';
+  toggleToolboxButton.querySelector('small').textContent = collapsed ? 'Show blocks' : 'Hide blocks';
+  window.requestAnimationFrame(() => Blockly.svgResize(workspace));
 }
 
 function downloadFile(contents, filename, type) {
@@ -342,23 +366,23 @@ function selectedWorkspaceBlock() {
 async function copySelectedBlocks() {
   const selected = selectedWorkspaceBlock();
   if (!selected) {
-    projectStatus.textContent = 'Select a block stack first, then choose Copy blocks.';
+    setProjectStatus('Select a block stack first, then choose Copy blocks.');
     return;
   }
   if (selected.type === 'robocode_start') {
-    projectStatus.textContent = 'START is the one permanent entry point. Copy the blocks inside it instead.';
+    setProjectStatus('START is the one permanent entry point. Copy the blocks inside it instead.');
     return;
   }
   copiedBlockState = Blockly.serialization.blocks.save(selected, { doFullSerialization: true });
   if (!copiedBlockState) {
-    projectStatus.textContent = 'That selection cannot be copied as a block stack.';
+    setProjectStatus('That selection cannot be copied as a block stack.');
     return;
   }
   try {
     await navigator.clipboard.writeText(JSON.stringify(copiedBlockState));
-    projectStatus.textContent = 'Copied the selected block stack. Choose Paste blocks to add it again.';
+    setProjectStatus('Copied the selected block stack. Choose Paste blocks to add it again.');
   } catch {
-    projectStatus.textContent = 'Copied the selected block stack inside RoboCode. Choose Paste blocks to add it again.';
+    setProjectStatus('Copied the selected block stack inside RoboCode. Choose Paste blocks to add it again.');
   }
 }
 
@@ -368,16 +392,16 @@ async function pasteBlocks() {
     try {
       state = JSON.parse(await navigator.clipboard.readText());
     } catch {
-      projectStatus.textContent = 'Copy a RoboCode block stack first.';
+      setProjectStatus('Copy a RoboCode block stack first.');
       return;
     }
   }
   if (!state || typeof state.type !== 'string' || !state.type.startsWith('robocode_')) {
-    projectStatus.textContent = 'Clipboard does not contain a RoboCode block stack.';
+    setProjectStatus('Clipboard does not contain a RoboCode block stack.');
     return;
   }
   if (state.type === 'robocode_start') {
-    projectStatus.textContent = 'A project keeps one START block. Paste the blocks inside START instead.';
+    setProjectStatus('A project keeps one START block. Paste the blocks inside START instead.');
     return;
   }
   try {
@@ -388,9 +412,9 @@ async function pasteBlocks() {
     block.select();
     lastSelectedBlockId = block.id;
     Blockly.svgResize(workspace);
-    projectStatus.textContent = 'Pasted the block stack. It is selected and ready to move.';
+    setProjectStatus('Pasted the block stack. It is selected and ready to move.');
   } catch (error) {
-    projectStatus.textContent = `Could not paste blocks: ${error.message}`;
+    setProjectStatus(`Could not paste blocks: ${error.message}`);
   }
 }
 
@@ -784,8 +808,6 @@ async function enableSerialEvents() {
 }
 
 async function checkUsbConnection() {
-  setActiveTab('hardware');
-  setHardwareTab('connection');
   if (!isNativeRoboCodeApp()) {
     usbStatus.textContent = 'USB detection is available in the RoboCode Android app. The browser version keeps using ArduinoDroid.';
     setBoardStatus('Available in Android app', 'idle');
@@ -804,12 +826,21 @@ async function checkUsbConnection() {
       return;
     }
 
-    usbStatus.textContent = 'Choose the ESP32 USB adapter and allow RoboCode to use it.';
-    setBoardStatus('Choose an adapter', 'checking');
-    devices.forEach(showUsbDevice);
+    const device = devices[0];
+    if (device.permissionGranted) {
+      selectUsbDevice(device);
+      setBoardStatus(`${device.driver} ready`, 'ready');
+      return;
+    }
+
+    usbStatus.textContent = `Allow RoboCode to use ${device.driver} when Android asks.`;
+    setBoardStatus('Allow USB access…', 'checking');
+    const grantedDevice = await requestUsbPermission(device.deviceId);
+    selectUsbDevice(grantedDevice);
+    setBoardStatus(`${grantedDevice.driver} ready`, 'ready');
   } catch (error) {
-    usbStatus.textContent = `Could not check USB devices: ${error.message}`;
-    setBoardStatus('Check failed', 'warning');
+    usbStatus.textContent = `ESP32 connection was not ready: ${error.message}`;
+    setBoardStatus('USB permission needed', 'warning');
   } finally {
     checkUsbButton.disabled = false;
   }
@@ -836,15 +867,16 @@ document.querySelector('#new-project').addEventListener('click', () => {
   lastSelectedBlockId = null;
   pasteCount = 0;
   updateGeneratedCode();
-  projectStatus.textContent = 'New project ready. Add blocks inside START.';
+  setProjectStatus('New project ready. Add blocks inside START.');
   setActiveTab('build');
 });
 copyBlocksButton.addEventListener('click', copySelectedBlocks);
 pasteBlocksButton.addEventListener('click', pasteBlocks);
+toggleToolboxButton.addEventListener('click', () => setToolboxCollapsed(!toolboxCollapsed));
 document.querySelector('#save-project').addEventListener('click', () => {
   const project = createProject(workspace);
   downloadFile(JSON.stringify(project, null, 2), 'robocode-project.json', 'application/json');
-  projectStatus.textContent = 'Project saved as robocode-project.json.';
+  setProjectStatus('Project saved as robocode-project.json.');
 });
 
 document.querySelector('#load-project').addEventListener('click', () => projectFileInput.click());
@@ -855,10 +887,10 @@ projectFileInput.addEventListener('change', async () => {
   try {
     loadProject(workspace, JSON.parse(await file.text()));
     updateGeneratedCode();
-    projectStatus.textContent = `Loaded ${file.name}.`;
+    setProjectStatus(`Loaded ${file.name}.`);
     setActiveTab('build');
   } catch (error) {
-    projectStatus.textContent = `Could not load ${file.name}: ${error.message}`;
+    setProjectStatus(`Could not load ${file.name}: ${error.message}`);
   } finally {
     projectFileInput.value = '';
   }
@@ -868,7 +900,7 @@ document.querySelector('#copy-code').addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(codeElement.textContent);
     copyStatus.textContent = 'Copied. Paste this into an Arduino sketch named robocode_program.ino.';
-    projectStatus.textContent = 'Copied the Arduino sketch. Paste it into a sketch named robocode_program.ino.';
+    setProjectStatus('Copied the Arduino sketch. Paste it into a sketch named robocode_program.ino.');
   } catch {
     copyStatus.textContent = 'Copy was blocked by the browser. Select the code and copy it manually.';
   }
@@ -877,7 +909,7 @@ document.querySelector('#copy-code').addEventListener('click', async () => {
 document.querySelector('#download-code').addEventListener('click', () => {
   downloadFile(codeElement.textContent, 'robocode_program.ino', 'text/x-arduino');
   copyStatus.textContent = 'Downloaded robocode_program.ino. Open it in ArduinoDroid, then compile and upload.';
-  projectStatus.textContent = 'Downloaded robocode_program.ino.';
+  setProjectStatus('Downloaded robocode_program.ino.');
 });
 checkUsbButton.addEventListener('click', checkUsbConnection);
 projectTab.addEventListener('click', () => setActiveTab('project'));

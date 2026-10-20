@@ -33,9 +33,9 @@ button.secondary:hover { background: #c9e1e8; }
     radial-gradient(circle at 14% 125%, rgba(86, 153, 255, 0.25), transparent 27rem),
     linear-gradient(112deg, #08293c, #0f5a72 58%, #123e68);
   color: #fff;
-  display: flex;
-  gap: 2rem;
-  justify-content: space-between;
+  display: grid;
+  gap: clamp(0.9rem, 2vw, 2rem);
+  grid-template-columns: minmax(3.85rem, 1fr) minmax(18rem, 4fr) minmax(14rem, 2fr);
   overflow: hidden;
   padding: 1.35rem clamp(1rem, 5vw, 5rem);
   position: relative;
@@ -54,7 +54,7 @@ button.secondary:hover { background: #c9e1e8; }
   width: 21rem;
 }
 .app-header > * { position: relative; z-index: 1; }
-.brand-lockup { align-items: center; display: flex; gap: 1rem; }
+.brand-message { align-self: center; min-width: 0; }
 .brand-mark {
   align-items: center;
   background: linear-gradient(145deg, #6cf0c9, #57a9f8);
@@ -83,14 +83,14 @@ h2 { font-size: 1.15rem; }
 .brand-kicker { color: #a8f1d7; font-size: 0.7rem; font-weight: 900; letter-spacing: 0.12em; margin-bottom: 0.35rem; }
 .brand-kicker span { background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.24); border-radius: 99px; color: #fff; font-size: 0.63rem; margin-left: 0.35rem; padding: 0.18rem 0.38rem; }
 .subtitle { color: #d7f0f5; margin-top: 0.42rem; max-width: 40rem; opacity: 0.9; }
-.header-side { align-items: center; display: flex; flex-wrap: wrap; gap: 0.85rem; justify-content: flex-end; }
-.journey { background: rgba(1, 25, 41, 0.29); border: 1px solid rgba(206, 246, 239, 0.22); border-radius: 12px; padding: 0.55rem 0.65rem; }
+.header-side { align-items: stretch; display: flex; flex-direction: column; gap: 0.55rem; justify-content: center; min-width: 0; }
+.journey { background: rgba(1, 25, 41, 0.29); border: 1px solid rgba(206, 246, 239, 0.22); border-radius: 12px; padding: 0.55rem 0.65rem; width: 100%; }
 .journey-label { color: #a8f1d7; display: block; font-size: 0.62rem; font-weight: 900; letter-spacing: 0.1em; margin: 0 0 0.34rem 0.22rem; }
-.journey ol { display: flex; gap: 0.35rem; list-style: none; margin: 0; padding: 0; }
-.journey li { align-items: center; color: #e6f9fc; display: flex; font-size: 0.76rem; font-weight: 750; gap: 0.28rem; white-space: nowrap; }
-.journey li:not(:last-child)::after { color: #91c8d3; content: '→'; margin-left: 0.12rem; }
+.journey ol { display: grid; gap: 0.24rem; list-style: none; margin: 0; padding: 0; }
+.journey li { align-items: center; color: #e6f9fc; display: flex; font-size: 0.76rem; font-weight: 750; gap: 0.32rem; white-space: nowrap; }
+.journey li:not(:last-child)::after { display: none; }
 .journey li span { align-items: center; background: rgba(255, 255, 255, 0.17); border-radius: 50%; display: inline-flex; font-size: 0.64rem; height: 1.05rem; justify-content: center; width: 1.05rem; }
-.status { align-items: center; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.19); border-radius: 12px; display: flex; gap: 0.55rem; padding: 0.56rem 0.68rem; white-space: nowrap; }
+.status { align-items: center; align-self: flex-start; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.19); border-radius: 12px; display: flex; gap: 0.55rem; padding: 0.56rem 0.68rem; white-space: nowrap; }
 .status > span { background: #9ae6b4; border-radius: 50%; box-shadow: 0 0 0 4px rgba(154, 230, 180, 0.14); height: 0.55rem; width: 0.55rem; }
 .status strong { display: block; font-size: 0.78rem; }
 .status small { color: #c8e9ef; display: block; font-size: 0.67rem; margin-top: 0.1rem; }
@@ -165,7 +165,7 @@ h2 { font-size: 1.15rem; }
 .build-layout { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1.3fr) minmax(20rem, 0.9fr); }
 .hardware-layout { display: grid; }
 .workspace-panel, .code-panel, .usb-panel, .project-hub { background: #fff; border: 1px solid #cfdee3; border-radius: 12px; box-shadow: 0 6px 20px rgba(21, 58, 75, 0.08); overflow: hidden; }
-.workspace-panel { min-height: 34rem; }
+.workspace-panel { display: flex; flex-direction: column; min-height: 39rem; }
 .project-layout { display: grid; }
 .project-intro { color: #36596b; line-height: 1.55; max-width: 56rem; padding: 1rem 1.1rem 0; }
 .project-actions-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); padding: 1rem 1.1rem; }
@@ -175,11 +175,17 @@ h2 { font-size: 1.15rem; }
 .project-action small { color: #527082; font-size: 0.76rem; font-weight: 600; line-height: 1.25; }
 .panel-heading { align-items: center; border-bottom: 1px solid #dce7eb; display: flex; gap: 1rem; justify-content: space-between; padding: 1rem 1.1rem; }
 .panel-heading .eyebrow { color: #527082; margin-bottom: 0.2rem; }
-#blockly-div { height: calc(100% - 6.1rem); min-height: 28rem; width: 100%; }
+#blockly-div { flex: 1 1 auto; height: auto; min-height: 33rem; width: 100%; }
+.workspace-actions { gap: 0.35rem; }
+.compact-icon-action { align-items: center; display: inline-flex; flex-direction: column; gap: 0.12rem; justify-content: center; line-height: 1; min-width: 3.65rem; padding: 0.38rem 0.48rem; }
+.compact-icon-action > span { font-size: 1.05rem; }
+.compact-icon-action small { font-size: 0.68rem; font-weight: 800; }
 .blocklyToolboxDiv { min-width: 11.25rem; }
 .blocklyTreeRow { height: 2.45rem !important; padding-top: 0.28rem !important; }
 .blocklyTreeLabel { font-size: 1.1rem !important; line-height: 1.25 !important; }
 .hint { color: #527082; font-size: 0.86rem; padding: 0.8rem 1.1rem; }
+.workspace-footer { border-top: 1px solid #dce7eb; flex: 0 0 auto; margin: 0; padding-bottom: 0.7rem; padding-top: 0.7rem; }
+.build-status { background: #f4fafb; border-top: 1px solid #dce7eb; flex: 0 0 auto; margin: 0; padding-bottom: 0.65rem; padding-top: 0.65rem; }
 .project-status { border-top: 1px solid #dce7eb; padding-top: 0; }
 .hint code { background: #edf4f6; border-radius: 4px; padding: 0.1rem 0.25rem; }
 .code-actions { border-bottom: 1px solid #dce7eb; padding: 0.8rem 1.1rem; }
@@ -222,8 +228,9 @@ h2 { font-size: 1.15rem; }
 #flash-output { background: #102630; color: #dcf4ff; font: 0.82rem/1.55 "Cascadia Code", Consolas, monospace; margin: 0; max-height: 18rem; min-height: 8rem; overflow: auto; padding: 1.1rem; white-space: pre-wrap; }
 
 @media (max-width: 900px) {
-  .app-header { align-items: flex-start; flex-direction: column; }
-  .header-side { justify-content: flex-start; width: 100%; }
+  .app-header { align-items: start; grid-template-columns: minmax(3.4rem, 1fr) minmax(0, 4fr) minmax(7rem, 2fr); }
+  .header-side { flex-direction: column; grid-column: auto; justify-content: center; width: auto; }
+  .status { align-self: stretch; }
   .build-layout { grid-template-columns: 1fr; }
   .panel-heading { align-items: flex-start; flex-direction: column; }
   .panel-actions, .code-actions { justify-content: flex-start; }
@@ -232,7 +239,8 @@ h2 { font-size: 1.15rem; }
   .toolbar-label { min-width: 100%; }
   .run-action { flex: 1 1 6.7rem; }
   .project-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .workspace-panel { min-height: 30rem; }
+  .workspace-panel { min-height: 36rem; }
+  #blockly-div { min-height: 30rem; }
   .usb-devices li { align-items: flex-start; flex-direction: column; }
   .serial-controls { align-items: flex-start; flex-direction: column; }
   .serial-controls > div { margin-right: 0; }
@@ -240,10 +248,42 @@ h2 { font-size: 1.15rem; }
 
 @media (max-width: 430px) {
   .brand-mark { border-radius: 14px 14px 14px 4px; font-size: 1.45rem; height: 3.1rem; width: 3.1rem; }
-  .journey { width: 100%; }
-  .journey ol { justify-content: space-between; }
-  .journey li { font-size: 0.7rem; }
-  .journey li:not(:last-child)::after { display: none; }
   .project-actions-grid { grid-template-columns: 1fr; }
   .tab-button { min-width: 0; flex: 1 1 0; }
+}
+
+@media (max-width: 600px) {
+  .app-header { gap: 0.5rem; padding-bottom: 0.85rem; padding-top: 0.85rem; }
+  .brand-mark { border-radius: 14px 14px 14px 4px; font-size: 1.45rem; height: 3.1rem; width: 3.1rem; }
+  .brand-kicker { font-size: 0.58rem; margin-bottom: 0.2rem; }
+  .brand-kicker span { display: none; }
+  h1 { font-size: clamp(1.28rem, 5vw, 1.7rem); }
+  .subtitle { font-size: 0.74rem; line-height: 1.25; margin-top: 0.25rem; }
+  .journey { padding: 0.36rem 0.24rem; }
+  .journey-label { font-size: 0.5rem; letter-spacing: 0.06em; margin: 0 0 0.2rem 0.12rem; }
+  .journey ol { gap: 0.16rem; }
+  .journey li { font-size: 0.58rem; gap: 0.2rem; line-height: 1; text-align: left; }
+  .journey li span { font-size: 0.55rem; height: 0.9rem; width: 0.9rem; }
+  .status { display: none; }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .app-header { gap: 0.7rem; grid-template-columns: minmax(3.1rem, 1fr) minmax(16rem, 4fr) minmax(11rem, 2fr); padding-bottom: 0.75rem; padding-top: 0.75rem; }
+  .header-side { flex-direction: column; grid-column: auto; width: auto; }
+  .brand-mark { border-radius: 14px 14px 14px 4px; font-size: 1.45rem; height: 3.1rem; width: 3.1rem; }
+  .brand-kicker { margin-bottom: 0.16rem; }
+  h1 { font-size: clamp(1.4rem, 3vw, 1.9rem); }
+  .subtitle { font-size: 0.86rem; margin-top: 0.2rem; }
+  .journey { padding: 0.4rem 0.52rem; }
+  .journey-label { margin-bottom: 0.2rem; }
+  .quick-toolbar { margin-bottom: 0.6rem; padding: 0.45rem; }
+  .toolbar-group { padding: 0.35rem; }
+  .toolbar-label { min-width: auto; }
+  .run-action { min-height: 3.45rem; min-width: 5.8rem; }
+  .action-icon { font-size: 1.2rem; }
+  .app-main { padding-bottom: 0.6rem; padding-top: 0.6rem; }
+  .build-layout { grid-template-columns: minmax(0, 1.45fr) minmax(17rem, 0.75fr); }
+  .workspace-panel { min-height: 28rem; }
+  #blockly-div { min-height: 23rem; }
+  .workspace-footer { padding-bottom: 0.45rem; padding-top: 0.45rem; }
 }
