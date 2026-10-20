@@ -56,6 +56,7 @@ button.secondary:hover { background: #c9e1e8; }
 .app-header > * { position: relative; z-index: 1; }
 .brand-message { align-self: center; min-width: 0; }
 .brand-mark {
+  align-self: center;
   align-items: center;
   background: linear-gradient(145deg, #6cf0c9, #57a9f8);
   border: 2px solid rgba(255, 255, 255, 0.68);
@@ -64,12 +65,12 @@ button.secondary:hover { background: #c9e1e8; }
   color: #073046;
   display: flex;
   flex: 0 0 auto;
-  font-size: 1.8rem;
+  font-size: clamp(1.8rem, 3.5vw, 2.25rem);
   font-weight: 950;
-  height: 3.85rem;
+  height: clamp(3.85rem, 6vw, 5rem);
   justify-content: center;
   position: relative;
-  width: 3.85rem;
+  width: clamp(3.85rem, 6vw, 5rem);
 }
 .brand-mark span { transform: translateY(-0.02rem); }
 .brand-mark i, .brand-mark b { background: #fff; border-radius: 50%; height: 0.36rem; position: absolute; width: 0.36rem; }
@@ -270,7 +271,7 @@ h2 { font-size: 1.15rem; }
 @media (orientation: landscape) and (max-height: 600px) {
   .app-header { gap: 0.7rem; grid-template-columns: minmax(3.1rem, 1fr) minmax(16rem, 4fr) minmax(11rem, 2fr); padding-bottom: 0.75rem; padding-top: 0.75rem; }
   .header-side { flex-direction: column; grid-column: auto; width: auto; }
-  .brand-mark { border-radius: 14px 14px 14px 4px; font-size: 1.45rem; height: 3.1rem; width: 3.1rem; }
+  .brand-mark { border-radius: 20px 20px 20px 6px; font-size: clamp(2rem, 4vw, 2.55rem); height: clamp(4.4rem, 11vh, 5.75rem); width: clamp(4.4rem, 11vh, 5.75rem); }
   .brand-kicker { margin-bottom: 0.16rem; }
   h1 { font-size: clamp(1.4rem, 3vw, 1.9rem); }
   .subtitle { font-size: 0.86rem; margin-top: 0.2rem; }
