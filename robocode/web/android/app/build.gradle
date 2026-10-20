@@ -22,6 +22,19 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    // Diagnostic tools are opt-in and never enter ordinary phone test APKs.
+    sourceSets {
+        debug {
+            jniLibs.srcDirs = project.hasProperty('withCompilerDiagnostics') ? ['src/debug/jniLibs'] : []
+        }
+    }
+    packagingOptions {
+        jniLibs {
+            // The compiler loader is launched as a process from nativeLibraryDir.
+            useLegacyPackaging true
+            keepDebugSymbols += ['**/librc_*.so']
+        }
+    }
 }
 
 repositories {

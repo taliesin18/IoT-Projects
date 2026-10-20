@@ -1,0 +1,70 @@
+--- a/sysdeps/unix/sysv/linux/access.c
++++ b/sysdeps/unix/sysv/linux/access.c
+@@ -24,11 +24,8 @@
+ int
+ __access (const char *file, int type)
+ {
+-#ifdef __NR_access
+-  return INLINE_SYSCALL_CALL (access, file, type);
+-#else
++  /* Android permits faccessat but filters the legacy x86-64 access syscall. */
+   return INLINE_SYSCALL_CALL (faccessat, AT_FDCWD, file, type);
+-#endif
+ }
+ libc_hidden_def (__access)
+ weak_alias (__access, access)
+--- a/sysdeps/unix/sysv/linux/chmod.c
++++ b/sysdeps/unix/sysv/linux/chmod.c
+@@ -22,11 +22,8 @@
+ int
+ __chmod (const char *file, mode_t mode)
+ {
+-#ifdef __NR_chmod
+-  return INLINE_SYSCALL_CALL (chmod, file, mode);
+-#else
++  /* Android exposes chmod through fchmodat. */
+   return INLINE_SYSCALL_CALL (fchmodat, AT_FDCWD, file, mode);
+-#endif
+ }
+
+ libc_hidden_def (__chmod)
+--- a/sysdeps/unix/sysv/linux/readlink.c
++++ b/sysdeps/unix/sysv/linux/readlink.c
+@@ -26,10 +26,7 @@
+ ssize_t
+ __readlink (const char *path, char *buf, size_t len)
+ {
+-#ifdef __NR_readlink
+-  return INLINE_SYSCALL_CALL (readlink, path, buf, len);
+-#else
++  /* Match Android's readlinkat syscall. */
+   return INLINE_SYSCALL_CALL (readlinkat, AT_FDCWD, path, buf, len);
+-#endif
+ }
+ weak_alias (__readlink, readlink)
+--- a/sysdeps/unix/sysv/linux/unlink.c
++++ b/sysdeps/unix/sysv/linux/unlink.c
+@@ -23,10 +23,7 @@
+ int
+ __unlink (const char *name)
+ {
+-#ifdef __NR_unlink
+-  return INLINE_SYSCALL_CALL (unlink, name);
+-#else
++  /* Match Android's unlinkat syscall, including linker error cleanup. */
+   return INLINE_SYSCALL_CALL (unlinkat, AT_FDCWD, name, 0);
+-#endif
+ }
+ weak_alias (__unlink, unlink)
+--- a/sysdeps/unix/sysv/linux/lxstat64.c
++++ b/sysdeps/unix/sysv/linux/lxstat64.c
+@@ -47,7 +47,8 @@
+ # elif defined __NR_lstat
+   /* Old 64-bit kABI, e.g. powerpc64*, s390x, and x86_64.  */
+   if (vers == _STAT_VER_KERNEL || vers == _STAT_VER_LINUX)
+-    return INLINE_SYSCALL_CALL (lstat, name, buf);
++    return INLINE_SYSCALL_CALL (newfstatat, AT_FDCWD, name, buf,
++                                AT_SYMLINK_NOFOLLOW);
+ # elif defined __NR_newfstatat
+   /* New kABIs which uses generic 64-bit Linux ABI, e.g. aarch64, riscv64.  */
+   if (vers == _STAT_VER_KERNEL)

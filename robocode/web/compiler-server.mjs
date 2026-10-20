@@ -98,7 +98,41 @@ async function findBootApp0() {
   throw new Error('Could not find ESP32 boot_app0.bin. Set ROBOCODE_BOOT_APP0_PATH to its full path.');
 }
 
-async function compileSketch(sketch) {
+function withArduinoConfig(argumentsList) {
+  return arduinoConfig ? [...argumentsList, '--config-file', arduinoConfig] : argumentsList;
+}
+
+function safeSerialPort(value) {
+  if (typeof value !== 'string' || value.length > 128) throw new Error('Choose a valid serial port.');
+  const port = value.trim();
+  if (!/^(COM\d+|\\\\\.\\COM\d+|\/dev\/[A-Za-z0-9._/-]+)$/i.test(port)) {
+    throw new Error('Choose a valid serial port.');
+  }
+  return port;
+}
+
+async function listPorts() {
+  const output = await run(arduinoCli, withArduinoConfig(['board', 'list', '--format', 'json']));
+  let boardList;
+  try {
+    boardList = JSON.parse(output);
+  } catch {
+    throw new Error('Arduino CLI returned an unreadable serial-port list.');
+  }
+  return (boardList.detected_ports || [])
+    .map((detectedPort) => {
+      const address = detectedPort.port?.address;
+      if (!address) return null;
+      const board = detectedPort.matching_boards?.[0];
+      return {
+        address,
+        label: [detectedPort.port?.label || address, board?.name].filter(Boolean).join(' — '),
+      };
+    })
+    .filter(Boolean);
+}
+
+async function compileSketch(sketch, { uploadPort, includeSegments = true } = {}) {
   if (typeof sketch !== 'string' || !sketch.trim()) throw new Error('The generated sketch is empty.');
   if (Buffer.byteLength(sketch) > maxSketchBytes) throw new Error('The generated sketch is too large for this compiler service.');
 
@@ -112,17 +146,24 @@ async function compileSketch(sketch) {
     await mkdir(outputDirectory);
     await writeFile(sourceFile, sketch, 'utf8');
 
-    const args = ['compile', '--fqbn', fqbn, sketchDirectory, '--output-dir', outputDirectory];
-    if (arduinoConfig) args.push('--config-file', arduinoConfig);
-    const log = await run(arduinoCli, args);
-    const bootApp0 = await findBootApp0();
+    const log = await run(arduinoCli, withArduinoConfig(['compile', '--fqbn', fqbn, sketchDirectory, '--output-dir', outputDirectory]));
+    let uploadLog = '';
+    if (uploadPort) {
+      uploadLog = await run(arduinoCli, withArduinoConfig([
+        'upload',
+        '--fqbn', fqbn,
+        '--port', safeSerialPort(uploadPort),
+        '--input-dir', outputDirectory,
+      ]));
+    }
+    const bootApp0 = includeSegments ? await findBootApp0() : null;
     const files = [
       { name: 'bootloader', filename: 'robocode_program.ino.bootloader.bin', address: 0x1000 },
       { name: 'partitions', filename: 'robocode_program.ino.partitions.bin', address: 0x8000 },
       { name: 'OTA selector', filename: 'boot_app0.bin', address: 0xe000, source: bootApp0 },
       { name: 'application', filename: 'robocode_program.ino.bin', address: 0x10000 },
     ];
-    const segments = await Promise.all(files.map(async (segment) => {
+    const segments = await Promise.all((includeSegments ? files : []).map(async (segment) => {
       const bytes = await readFile(segment.source || path.join(outputDirectory, segment.filename));
       return {
         name: segment.name,
@@ -131,7 +172,7 @@ async function compileSketch(sketch) {
         base64: bytes.toString('base64'),
       };
     }));
-    return { log, segments, sketchHash: createHash('sha256').update(sketch).digest('hex').slice(0, 12) };
+    return { log, uploadLog, segments, sketchHash: createHash('sha256').update(sketch).digest('hex').slice(0, 12) };
   } finally {
     await rm(jobDirectory, { recursive: true, force: true });
   }
@@ -155,7 +196,20 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (request.method !== 'POST' || request.url !== '/compile') {
+  if (request.method === 'GET' && request.url === '/ports') {
+    if (!authorized(request)) {
+      sendJson(response, 401, { error: 'Enter the compiler access token shown on the PC.' });
+      return;
+    }
+    try {
+      sendJson(response, 200, { ports: await listPorts() });
+    } catch (error) {
+      sendJson(response, 422, { error: error.message || 'Could not list serial ports.' });
+    }
+    return;
+  }
+
+  if (request.method !== 'POST' || !['/compile', '/upload'].includes(request.url)) {
     sendJson(response, 404, { error: 'Not found.' });
     return;
   }
@@ -170,8 +224,11 @@ const server = createServer(async (request, response) => {
 
   compileInProgress = true;
   try {
-    const { sketch } = await readJsonBody(request);
-    const result = await compileSketch(sketch);
+    const { sketch, port: uploadPort } = await readJsonBody(request);
+    if (request.url === '/upload' && !uploadPort) throw new Error('Choose the ESP32 serial port.');
+    const result = request.url === '/upload'
+      ? await compileSketch(sketch, { uploadPort, includeSegments: false })
+      : await compileSketch(sketch);
     sendJson(response, 200, { fqbn, ...result });
   } catch (error) {
     sendJson(response, 422, { error: error.message || 'Compilation failed.' });

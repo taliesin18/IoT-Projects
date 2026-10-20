@@ -101,7 +101,7 @@ function formatFlashError(error) {
   return message;
 }
 
-export async function flashFirmware({ device, parts, onLog, onProgress }) {
+export async function flashFirmware({ device, parts, onLog, onProgress, expectedChip }) {
   const nativePort = new RoboCodeNativeSerialPort(device);
   const transport = new Transport(nativePort, false);
   const terminal = {
@@ -119,6 +119,9 @@ export async function flashFirmware({ device, parts, onLog, onProgress }) {
     });
     const chipName = await loader.main('default_reset');
     onLog(`Connected to ${chipName}.\n`);
+    if (expectedChip && loader.chip?.CHIP_NAME !== expectedChip) {
+      throw new Error(`This compiled firmware requires ${expectedChip}. The connected board is ${chipName}. No flash data was written.`);
+    }
 
     const preparedParts = await Promise.all(parts.map(async ({ file, address }) => ({
       data: new Uint8Array(await file.arrayBuffer()),

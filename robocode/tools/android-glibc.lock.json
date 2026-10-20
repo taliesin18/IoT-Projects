@@ -1,0 +1,17 @@
+{
+  "version": "2.44",
+  "repository": "https://packages-cf.termux.dev/apt/termux-glibc/",
+  "recipe": "https://github.com/termux/glibc-packages/tree/main/gpkg/glibc",
+  "source": "https://ftp.gnu.org/gnu/libc/glibc-2.44.tar.xz",
+  "sourceSha256": "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667",
+  "packages": {
+    "x86_64": {
+      "Filename": "pool/stable/g/glibc/glibc_2.44_x86_64.deb",
+      "SHA256": "d5b59a9b4612ee7d3dcf905dcda752abcee1777d475b5cfbc40e04dbe461344e"
+    },
+    "aarch64": {
+      "Filename": "pool/stable/g/glibc/glibc_2.44_aarch64.deb",
+      "SHA256": "5392d254e84c436e96783bcb6ffffe429d6b24c7ad00490f23f06f66c4769fb6"
+    }
+  }
+}
