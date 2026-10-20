@@ -163,7 +163,7 @@ h2 { font-size: 1.15rem; }
 .tab-button[aria-selected="true"] { background: #126782; color: #fff; }
 .tab-panel { min-width: 0; }
 .tab-panel[hidden] { display: none; }
-.build-layout { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1.3fr) minmax(20rem, 0.9fr); }
+.build-layout { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
 .hardware-layout { display: grid; }
 .workspace-panel, .code-panel, .usb-panel, .project-hub { background: #fff; border: 1px solid #cfdee3; border-radius: 12px; box-shadow: 0 6px 20px rgba(21, 58, 75, 0.08); overflow: hidden; }
 .workspace-panel { display: flex; flex-direction: column; min-height: 39rem; }
@@ -232,7 +232,6 @@ h2 { font-size: 1.15rem; }
   .app-header { align-items: start; grid-template-columns: minmax(3.4rem, 1fr) minmax(0, 4fr) minmax(7rem, 2fr); }
   .header-side { flex-direction: column; grid-column: auto; justify-content: center; width: auto; }
   .status { align-self: stretch; }
-  .build-layout { grid-template-columns: 1fr; }
   .panel-heading { align-items: flex-start; flex-direction: column; }
   .panel-actions, .code-actions { justify-content: flex-start; }
   .quick-toolbar { align-items: stretch; flex-direction: column; }
@@ -283,7 +282,6 @@ h2 { font-size: 1.15rem; }
   .run-action { min-height: 3.45rem; min-width: 5.8rem; }
   .action-icon { font-size: 1.2rem; }
   .app-main { padding-bottom: 0.6rem; padding-top: 0.6rem; }
-  .build-layout { grid-template-columns: minmax(0, 1.45fr) minmax(17rem, 0.75fr); }
   .workspace-panel { min-height: 28rem; }
   #blockly-div { min-height: 23rem; }
   .workspace-footer { padding-bottom: 0.45rem; padding-top: 0.45rem; }
