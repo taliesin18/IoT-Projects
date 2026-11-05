@@ -1,5 +1,6 @@
 import * as Blockly from 'blockly';
 
+// Keep the RoboCode wire format so both app generations can exchange saved projects.
 export const PROJECT_FORMAT = 'robocode-project';
 export const PROJECT_VERSION = 1;
 
@@ -14,7 +15,7 @@ export function ensureStartBlock(workspace, { x = 48, y = 44 } = {}) {
     start.render?.();
     start.moveBy(x, y);
   }
-  // RoboCode keeps one clear entry point. Students can empty its contents,
+  // LambCode keeps one clear entry point. Students can empty its contents,
   // while New project remains the intentional way to begin again.
   start.setDeletable(false);
   return start;
@@ -30,7 +31,7 @@ export function createProject(workspace) {
 
 export function loadProject(workspace, project) {
   if (!project || typeof project !== 'object') {
-    throw new Error('The selected file is not a RoboCode project.');
+    throw new Error('The selected file is not a LambCode project.');
   }
   if (project.format !== PROJECT_FORMAT || project.version !== PROJECT_VERSION) {
     throw new Error('This project format or version is not supported.');

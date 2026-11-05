@@ -35,7 +35,7 @@ existing Android SDK and Java 21. These are developer tools, not phone requireme
 
 4. With an emulator connected, run
    `gradlew.bat :app:connectedDebugAndroidTest`. The `:app:` prefix deliberately
-   selects RoboCode's tests rather than the dependency projects' own test apps.
+   selects LambCode's tests rather than the dependency projects' own test apps.
 
 The packager uses Espressif's published download checksums, Debian's package
 checksums for supporting host libraries, and `android-glibc.lock.json` for the

@@ -218,7 +218,7 @@ const server = createServer(async (request, response) => {
     return;
   }
   if (compileInProgress) {
-    sendJson(response, 429, { error: 'A RoboCode compilation is already in progress. Try again in a moment.' });
+    sendJson(response, 429, { error: 'A LambCode compilation is already in progress. Try again in a moment.' });
     return;
   }
 
@@ -238,7 +238,7 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, '0.0.0.0', () => {
-  console.log(`RoboCode compiler ready for ${fqbn}.`);
+  console.log(`LambCode compiler ready for ${fqbn}.`);
   console.log(`Phone URL: ${localAddresses().join(' or ') || `http://<this-PC-IP>:${port}`}`);
   console.log(`Access token: ${accessToken}`);
   if (!process.env.ROBOCODE_COMPILER_TOKEN) console.log('This temporary token changes whenever the service restarts.');

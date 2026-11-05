@@ -9,7 +9,7 @@ Welcome! This repository is my growing workshop for Internet of Things projects 
 | Project | What it is | Highlights | Status |
 | --- | --- | --- | --- |
 | [ESP32 Air Mouse](./esp32-air-mouse/) | A Bluetooth air-mouse controller built around an ESP32 DevKit, MPU6050 motion sensor, OLED display, joystick, buttons, LED, and sensitivity control. | Firmware, latest EasyEDA schematic export, editable wiring diagram, setup notes | Active prototype |
-| [RoboCode](./robocode/) | A Blockly-based programming prototype for ESP32 projects. | Arduino code generation and Android tooling | Prototype |
+| [LambCode](./robocode/) | WhiteSheep AI’s block-programming app for ESP32 and edge IoT projects. | Arduino code generation and Android tooling | Prototype |
 | [WhiteSheep AI](./whitesheep-ai/) | A local AI workspace for ideas, coding assistance, and visual projects. | Ollama chat, IdeaLab, read-only CodeLab, VideoLab and optional local image generation | Early prototype |
 
 ## Explore a project
@@ -36,7 +36,7 @@ WhiteSheep is a local-first assistant with saved conversations and IdeaLab proje
 ```text
 IoT-Projects/
 ├── esp32-air-mouse/        # ESP32 BLE controller
-├── robocode/               # ESP32 block programming
+├── robocode/               # LambCode · ESP32 block programming
 └── whitesheep-ai/          # Local AI workspace
 ```
 
