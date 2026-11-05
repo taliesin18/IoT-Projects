@@ -26,14 +26,14 @@ defineRoboCodeBlocks();
 
 document.querySelector('#app').innerHTML = `
   <header class="app-header">
-    <div class="brand-mark" aria-hidden="true"><span>R</span><i></i><b></b></div>
+    <img class="brand-mark" src="/favicon.svg" alt="" width="80" height="80">
     <div class="brand-message">
-      <p class="brand-kicker">ROBOCODE <span>PHASE 1</span></p>
-      <h1>Build ideas that come alive.</h1>
-      <p class="subtitle">Make real ESP32 projects with blocks — then test them on your board.</p>
+      <p class="brand-kicker">WHITESHEEP AI <span>EDGE IoT</span></p>
+      <h1>LambCode</h1>
+      <p class="subtitle"><strong>Small device. Big ideas.</strong> Build, flash, and explore with ESP32.</p>
     </div>
     <div class="header-side">
-      <div class="journey" aria-label="RoboCode learning path">
+      <div class="journey" aria-label="LambCode learning path">
         <span class="journey-label">YOUR JOURNEY</span>
         <ol>
           <li><span>1</span>Project</li>
@@ -41,11 +41,11 @@ document.querySelector('#app').innerHTML = `
           <li><span>3</span>Hardware</li>
         </ol>
       </div>
-      <div class="status"><span></span><div><strong>RoboCode ready</strong><small>Blocks become Arduino code</small></div></div>
+      <div class="status"><span></span><div><strong>Local block editor</strong><small>Blocks become Arduino code</small></div></div>
     </div>
   </header>
   <main class="app-main">
-    <section class="quick-toolbar" aria-label="Run your RoboCode program">
+    <section class="quick-toolbar" aria-label="Run your LambCode program">
       <div class="toolbar-group toolbar-run-group">
         <span class="toolbar-label">Run your program</span>
         <button id="check-usb" class="run-action secondary" type="button"><span class="action-icon" aria-hidden="true">🔌</span><span>Check ESP32</span></button>
@@ -55,7 +55,7 @@ document.querySelector('#app').innerHTML = `
         <span id="board-status" class="board-status" data-state="idle" aria-live="polite">Not checked</span>
       </div>
     </section>
-    <div class="app-tabs" role="tablist" aria-label="RoboCode work areas">
+    <div class="app-tabs" role="tablist" aria-label="LambCode work areas">
       <button id="project-tab" class="tab-button" role="tab" aria-controls="project-panel" aria-selected="false" type="button"><span aria-hidden="true">📁</span><span>Project</span></button>
       <button id="build-tab" class="tab-button" role="tab" aria-controls="build-panel" aria-selected="true" type="button"><span aria-hidden="true">🧱</span><span>Build</span></button>
       <button id="hardware-tab" class="tab-button" role="tab" aria-controls="hardware-panel" aria-selected="false" type="button"><span aria-hidden="true">🔧</span><span>Hardware</span></button>
@@ -71,13 +71,13 @@ document.querySelector('#app').innerHTML = `
         <p class="project-intro">When your program is taking shape, come here to save it, open it again, or move pieces between programs. Your usual journey is <strong>Project → Build → Hardware</strong>.</p>
         <div class="project-actions-grid">
           <button id="new-project" class="project-action" type="button"><span class="action-icon" aria-hidden="true">✨</span><span>New project</span><small>Start with one empty START block</small></button>
-          <button id="save-project" class="project-action" type="button"><span class="action-icon" aria-hidden="true">💾</span><span>Save project</span><small>Keep your blocks as a RoboCode file</small></button>
-          <button id="load-project" class="project-action" type="button"><span class="action-icon" aria-hidden="true">📂</span><span>Open project</span><small>Continue a saved RoboCode file</small></button>
+          <button id="save-project" class="project-action" type="button"><span class="action-icon" aria-hidden="true">💾</span><span>Save project</span><small>Save your blocks on this device</small></button>
+          <button id="load-project" class="project-action" type="button"><span class="action-icon" aria-hidden="true">📂</span><span>Open project</span><small>Open LambCode or RoboCode projects</small></button>
           <button id="copy-code" class="project-action" type="button"><span class="action-icon" aria-hidden="true">📄</span><span>Copy .ino</span><small>Copy the Arduino sketch</small></button>
           <button id="download-code" class="project-action" type="button"><span class="action-icon" aria-hidden="true">⬇️</span><span>Download .ino</span><small>Save an Arduino sketch file</small></button>
         </div>
         <input id="project-file" type="file" accept="application/json,.json" hidden>
-        <p id="project-status" class="hint project-status" aria-live="polite">Projects are saved locally as RoboCode JSON files.</p>
+        <p id="project-status" class="hint project-status" aria-live="polite">Projects are saved locally as LambCode JSON files.</p>
       </section>
     </div>
     <div id="build-panel" class="tab-panel build-layout" role="tabpanel" aria-labelledby="build-tab">
@@ -173,7 +173,7 @@ document.querySelector('#app').innerHTML = `
               <h3>Compile blocks and flash</h3>
             </div>
           </div>
-          <p class="hint">Run RoboCode's compiler on your prepared PC, then enter the PC URL and access token shown there. The sketch stays on your local network.</p>
+          <p class="hint">Run LambCode's compiler on your prepared PC, then enter the PC URL and access token shown there. The sketch stays on your local network.</p>
           <div class="compiler-controls">
             <label for="compiler-url">PC URL</label>
             <input id="compiler-url" type="url" inputmode="url" placeholder="http://192.168.x.x:8787" autocomplete="off">
@@ -209,7 +209,7 @@ document.querySelector('#app').innerHTML = `
           </div>
           <p class="hint">Use this only for a compatible classic-ESP32 application binary. Most projects should use <strong>Compile &amp; flash</strong> in Program instead.</p>
           <div class="flash-controls">
-            <button id="flash-blink-test" class="secondary" type="button" disabled>Flash RoboCode Blink test</button>
+            <button id="flash-blink-test" class="secondary" type="button" disabled>Flash LambCode Blink test</button>
             <input id="app-binary" type="file" accept=".bin,application/octet-stream">
             <button id="flash-app" type="button" disabled>Flash app .bin</button>
           </div>
@@ -225,11 +225,25 @@ document.querySelector('#app').innerHTML = `
 
 const workspace = Blockly.inject('blockly-div', {
   toolbox,
-  grid: { spacing: 20, length: 3, colour: '#dce7ed', snap: true },
+  grid: { spacing: 20, length: 3, colour: '#d9e2dc', snap: true },
   trashcan: true,
   zoom: { controls: true, wheel: true, startScale: 0.9, maxScale: 1.3, minScale: 0.6 },
   move: { scrollbars: true, drag: true, wheel: true },
-  theme: Blockly.Themes.Classic,
+  theme: Blockly.Theme.defineTheme('lambcode', {
+    name: 'lambcode',
+    base: Blockly.Themes.Classic,
+    componentStyles: {
+      workspaceBackgroundColour: '#FFFDf8',
+      toolboxBackgroundColour: '#F7F3E8',
+      toolboxForegroundColour: '#123E48',
+      flyoutBackgroundColour: '#E6EEEA',
+      flyoutForegroundColour: '#123E48',
+      flyoutOpacity: 1,
+      scrollbarColour: '#718E8B',
+      insertionMarkerColour: '#217A78',
+      cursorColour: '#E9B44C',
+    },
+  }),
 });
 
 workspace.registerButtonCallback('CREATE_LOCAL_VARIABLE', (button) => {
@@ -382,7 +396,7 @@ async function copySelectedBlocks() {
     await navigator.clipboard.writeText(JSON.stringify(copiedBlockState));
     setProjectStatus('Copied the selected block stack. Choose Paste blocks to add it again.');
   } catch {
-    setProjectStatus('Copied the selected block stack inside RoboCode. Choose Paste blocks to add it again.');
+    setProjectStatus('Copied the selected block stack inside LambCode. Choose Paste blocks to add it again.');
   }
 }
 
@@ -392,12 +406,12 @@ async function pasteBlocks() {
     try {
       state = JSON.parse(await navigator.clipboard.readText());
     } catch {
-      setProjectStatus('Copy a RoboCode block stack first.');
+      setProjectStatus('Copy a LambCode block stack first.');
       return;
     }
   }
   if (!state || typeof state.type !== 'string' || !state.type.startsWith('robocode_')) {
-    setProjectStatus('Clipboard does not contain a RoboCode block stack.');
+    setProjectStatus('Clipboard does not contain a LambCode block stack.');
     return;
   }
   if (state.type === 'robocode_start') {
@@ -780,14 +794,14 @@ async function flashBlinkTest() {
       ['application', '/firmware/esp32-native-flash-test/esp32-blink-test.ino.bin', 0x10000],
     ].map(async ([name, url, address]) => {
       const response = await fetch(url);
-      if (!response.ok) throw new Error('The built-in test files are unavailable. Reinstall the latest RoboCode APK.');
+      if (!response.ok) throw new Error('The built-in test files are unavailable. Reinstall the latest LambCode APK.');
       const bytes = await response.arrayBuffer();
       return {
-        file: new File([bytes], `robocode-${name}.bin`, { type: 'application/octet-stream' }),
+        file: new File([bytes], `lambcode-${name}.bin`, { type: 'application/octet-stream' }),
         address,
       };
     }));
-    await flashFiles(files, 'RoboCode Blink test bundle');
+    await flashFiles(files, 'LambCode Blink test bundle');
   } catch (error) {
     usbStatus.textContent = `Could not prepare the Blink test: ${error.message}`;
     appendFlashOutput(`\n[Flash error] ${error.message}\n`);
@@ -809,7 +823,7 @@ async function enableSerialEvents() {
 
 async function checkUsbConnection() {
   if (!isNativeRoboCodeApp()) {
-    usbStatus.textContent = 'USB detection is available in the RoboCode Android app. The browser version keeps using ArduinoDroid.';
+    usbStatus.textContent = 'USB detection is available in the LambCode Android app. The browser version keeps using ArduinoDroid.';
     setBoardStatus('Available in Android app', 'idle');
     return;
   }
@@ -833,7 +847,7 @@ async function checkUsbConnection() {
       return;
     }
 
-    usbStatus.textContent = `Allow RoboCode to use ${device.driver} when Android asks.`;
+    usbStatus.textContent = `Allow LambCode to use ${device.driver} when Android asks.`;
     setBoardStatus('Allow USB access…', 'checking');
     const grantedDevice = await requestUsbPermission(device.deviceId);
     selectUsbDevice(grantedDevice);
@@ -875,8 +889,8 @@ pasteBlocksButton.addEventListener('click', pasteBlocks);
 toggleToolboxButton.addEventListener('click', () => setToolboxCollapsed(!toolboxCollapsed));
 document.querySelector('#save-project').addEventListener('click', () => {
   const project = createProject(workspace);
-  downloadFile(JSON.stringify(project, null, 2), 'robocode-project.json', 'application/json');
-  setProjectStatus('Project saved as robocode-project.json.');
+  downloadFile(JSON.stringify(project, null, 2), 'lambcode-project.json', 'application/json');
+  setProjectStatus('Project saved as lambcode-project.json.');
 });
 
 document.querySelector('#load-project').addEventListener('click', () => projectFileInput.click());
@@ -899,17 +913,17 @@ projectFileInput.addEventListener('change', async () => {
 document.querySelector('#copy-code').addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(codeElement.textContent);
-    copyStatus.textContent = 'Copied. Paste this into an Arduino sketch named robocode_program.ino.';
-    setProjectStatus('Copied the Arduino sketch. Paste it into a sketch named robocode_program.ino.');
+    copyStatus.textContent = 'Copied. Paste this into an Arduino sketch named lambcode_program.ino.';
+    setProjectStatus('Copied the Arduino sketch. Paste it into a sketch named lambcode_program.ino.');
   } catch {
     copyStatus.textContent = 'Copy was blocked by the browser. Select the code and copy it manually.';
   }
 });
 
 document.querySelector('#download-code').addEventListener('click', () => {
-  downloadFile(codeElement.textContent, 'robocode_program.ino', 'text/x-arduino');
-  copyStatus.textContent = 'Downloaded robocode_program.ino. Open it in ArduinoDroid, then compile and upload.';
-  setProjectStatus('Downloaded robocode_program.ino.');
+  downloadFile(codeElement.textContent, 'lambcode_program.ino', 'text/x-arduino');
+  copyStatus.textContent = 'Downloaded lambcode_program.ino. Open it in ArduinoDroid, then compile and upload.';
+  setProjectStatus('Downloaded lambcode_program.ino.');
 });
 checkUsbButton.addEventListener('click', checkUsbConnection);
 projectTab.addEventListener('click', () => setActiveTab('project'));
@@ -955,7 +969,7 @@ if (!isNativeRoboCodeApp() && !compilerUrl.value) compilerUrl.value = 'http://lo
 updateCompileButton();
 usbStatus.textContent = isNativeRoboCodeApp()
   ? 'Connect your ESP32 through OTG, then choose Check ESP32.'
-  : 'USB detection is available in the RoboCode Android app. The browser version keeps using ArduinoDroid.';
+  : 'USB detection is available in the LambCode Android app. The browser version keeps using ArduinoDroid.';
 setBoardStatus(isNativeRoboCodeApp() ? 'Not checked' : 'Available in Android app', 'idle');
 enableSerialEvents();
 phoneCompileButton.addEventListener('click', () => {

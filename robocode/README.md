@@ -1,6 +1,12 @@
-# RoboCode
+# LambCode
 
-RoboCode is a block-programming prototype for ESP32 projects. The shared Blockly editor generates Arduino C++, and the Android app adds local compilation, USB flashing, and a serial monitor.
+**WhiteSheep AI · Small device. Big ideas.**
+
+![LambCode mark](web/public/favicon.svg)
+
+Formerly RoboCode. The app name and visual identity have changed; the existing `robocode/` folder, Android app ID, native bridges, and saved-project format are retained for compatibility. See [branding and upgrade notes](docs/lambcode-branding.md).
+
+LambCode is WhiteSheep AI’s block-programming app for ESP32 and edge IoT projects. The shared Blockly editor generates Arduino C++, and the Android app adds local compilation, USB flashing, and a serial monitor.
 
 ## Run locally
 
@@ -20,11 +26,11 @@ The known-good expected output is in `fixtures/blink-1000ms/blink-1000ms.ino`.
 
 ## Save and load projects
 
-Use **Save project** to download a portable `robocode-project.json` file. Use **Load project** to restore that file into the workspace. The JSON contains blocks only; generated Arduino code is recreated locally when the project is opened.
+Use **Save project** to download a portable `lambcode-project.json` file. Use **Load project** to restore that file into the workspace. The JSON contains blocks only; generated Arduino code is recreated locally when the project is opened.
 
 ## Use the sketch on Android
 
-Use **Download .ino** to save the generated sketch as `robocode_blink.ino`. On an Android phone, open the downloaded file in ArduinoDroid, select the existing ESP32 target, then compile and upload through the known-good OTG connection.
+Use **Download .ino** to save the generated sketch as `lambcode_program.ino`. On an Android phone, open the downloaded file in ArduinoDroid, select the existing ESP32 target, then compile and upload through the known-good OTG connection.
 
 ## Native Android OTG work
 
@@ -49,15 +55,15 @@ The compiler binaries and data must be prepared separately before building an AP
 
 ### USB connection beta
 
-The Android app detects supported USB serial adapters, including the CP2102 used by the Phase 0 board, and requests Android USB access only after the user taps **Allow USB access**. In the RoboCode Android app, connect the ESP32 through OTG, choose **Check ESP32**, grant permission for the listed device, then open the Serial Monitor. It defaults to 115200 baud; resetting the ESP32 should show its boot output.
+The Android app detects supported USB serial adapters, including the CP2102 used by the Phase 0 board, and requests Android USB access only after the user taps **Allow USB access**. In the LambCode Android app, connect the ESP32 through OTG, choose **Check ESP32**, grant permission for the listed device, then open the Serial Monitor. It defaults to 115200 baud; resetting the ESP32 should show its boot output.
 
 ### Native ESP32 flashing beta
 
-The Hardware tab can now flash an ESP32 application binary without ArduinoDroid. Start with **Flash RoboCode Blink test**: it writes a bundled, matching bootloader, partition table, OTA selector, and GPIO 2 Blink app to the standard classic-ESP32 addresses. It prints `LED ON` and `LED OFF` at 115200 baud, so Serial Monitor verifies the result even if a board's built-in LED is wired differently. This first test expects the same classic ESP32 / CP2102 board used in Phase 0.
+The Hardware tab can now flash an ESP32 application binary without ArduinoDroid. Start with **Flash LambCode Blink test**: it writes a bundled, matching bootloader, partition table, OTA selector, and GPIO 2 Blink app to the standard classic-ESP32 addresses. It prints `LED ON` and `LED OFF` at 115200 baud, so Serial Monitor verifies the result even if a board's built-in LED is wired differently. This first test expects the same classic ESP32 / CP2102 board used in Phase 0.
 
 If the board does not automatically enter download mode, hold **BOOT**, tap **EN/RESET** once, release **BOOT**, and tap Flash again. After a successful flash, open Serial Monitor at 115200 baud to verify the program's output. **Flash app .bin** is for an ESP32 application binary compiled for the same board; it is deliberately not a generic full-device firmware installer yet.
 
-The implementation uses Espressif's Apache-2.0 licensed `esptool-js` package inside the Android app, while the Capacitor USB bridge owns Android's CP2102 connection. A successful on-device Blink flash is the acceptance test before we add RoboCode's native sketch compilation and automatic app-binary generation.
+The implementation uses Espressif's Apache-2.0 licensed `esptool-js` package inside the Android app, while the Capacitor USB bridge owns Android's CP2102 connection. A successful on-device Blink flash is the acceptance test before we add LambCode's native sketch compilation and automatic app-binary generation.
 
 ## Phase 3.3 — Compile on the phone
 
@@ -74,7 +80,7 @@ The first fixed target is the classic ESP32 with 4 MB flash and a GPIO 2 LED. Th
 The **GPIO Output** toolbox category provides `set GPIO … HIGH/LOW` for an
 external LED, relay module, or another simple digital output. It offers only
 safe common output pins for the current classic ESP32 profile: 16–19, 21–23,
-25–27, 32, and 33. RoboCode automatically generates the matching
+25–27, 32, and 33. LambCode automatically generates the matching
 `pinMode(pin, OUTPUT)` line in `setup()`.
 
 For a first external LED test, connect the selected GPIO through a 220–330 Ω
@@ -86,7 +92,7 @@ voltage requirements are confirmed.
 
 The **Control** category now has a reusable `if … then / otherwise` block.
 The **Input** category's `button on GPIO … is pressed` block plugs into its
-condition slot. RoboCode configures that button pin as `INPUT_PULLUP`, so wire
+condition slot. LambCode configures that button pin as `INPUT_PULLUP`, so wire
 one side of a normally open pushbutton to the chosen GPIO and the other side to
 GND—no separate resistor is required. A pressed button reads as true.
 
@@ -140,7 +146,7 @@ procedure required before a setup is called classroom-ready.
 
 ### Optional developer PC compiler
 
-RoboCode can now send the generated block sketch to a small compiler service running on the prepared PC, receive the complete classic-ESP32 firmware bundle, and flash it through the Android app. This is a local-Wi-Fi development workflow: the phone, PC, and ESP32 stay in your own network; no source code is sent to a cloud compiler.
+LambCode can now send the generated block sketch to a small compiler service running on the prepared PC, receive the complete classic-ESP32 firmware bundle, and flash it through the Android app. This is a local-Wi-Fi development workflow: the phone, PC, and ESP32 stay in your own network; no source code is sent to a cloud compiler.
 
 From `robocode/web`, start the service with the Arduino CLI paths already prepared on this PC:
 
@@ -150,14 +156,14 @@ $env:ARDUINO_CLI_CONFIG = 'C:\work\local\tools\arduino-cli\arduino-cli.yaml'
 npm run compiler
 ```
 
-Copy the **Phone URL** and **Access token** it prints into **Hardware → Developer PC compiler (optional)** in the RoboCode Android app. Select the CP2102 device, choose **Check compiler**, then choose **Compile blocks & flash**.
+Copy the **Phone URL** and **Access token** it prints into **Hardware → Developer PC compiler (optional)** in the LambCode Android app. Select the CP2102 device, choose **Check compiler**, then choose **Compile blocks & flash**.
 
 See [the Phase 3.3 setup guide](docs/phase-3.3-local-compiler.md) for security notes, recovery, and the exact firmware segments.
 
 ### Laptop compile and upload beta
 
 The same local compiler can now upload from a laptop browser without opening
-Arduino IDE. Start `npm run compiler` on the laptop, open RoboCode in that
+Arduino IDE. Start `npm run compiler` on the laptop, open LambCode in that
 laptop's browser, and open **Hardware → Advanced → Developer PC compiler**.
 Enter `http://localhost:8787` and the token printed by the compiler, then use
 **Laptop Browser → Find COM ports** and **Compile & upload from laptop**.
@@ -172,10 +178,10 @@ unsupported boards.
 The **Display** category includes text, number, and clear blocks for common
 PCF8574 I2C 16x2 LCD backpacks. Enter the address reported by the scanner in
 each LCD block—`0x27`, `0x3F`, and your `0x3E` are all accepted. Decimal input
-is also accepted, then saved as hexadecimal. RoboCode validates standard I2C
+is also accepted, then saved as hexadecimal. LambCode validates standard I2C
 addresses from `0x03` through `0x77`.
 
-RoboCode uses the classic ESP32 I2C pins: **GPIO 21 (SDA)** and **GPIO 22
+LambCode uses the classic ESP32 I2C pins: **GPIO 21 (SDA)** and **GPIO 22
 (SCL)**. Do not also assign those pins to another block. Before connecting an
 LCD backpack powered at 5 V, confirm that its SDA/SCL pull-ups are safe at 3.3
 V or use an I2C level shifter; an unmodified 5 V I2C signal can damage an
@@ -193,7 +199,7 @@ physical acceptance test with the actual LCD and servo before being treated as
 supported classroom hardware.
 
 Use **Display → scan I2C devices once** before choosing an LCD address. Flash
-that program, then open RoboCode Serial Monitor at 115200 baud. It prints each
+that program, then open LambCode Serial Monitor at 115200 baud. It prints each
 responding address, for example `I2C device: 0x3E`, only once after boot. The
 scan confirms that a device responds at that address; it does not identify the
 device type. A result of `No I2C devices found.` means to check the LCD power,

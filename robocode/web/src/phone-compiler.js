@@ -5,7 +5,7 @@ const compiler = registerPlugin('RoboCodeCompiler');
 const decode = (value) => Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
 
 export async function phoneCompilerStatus() {
-  if (!Capacitor.isNativePlatform()) return { available: false, message: 'Phone compilation is available in the RoboCode APK with the bundled compiler.' };
+  if (!Capacitor.isNativePlatform()) return { available: false, message: 'Phone compilation is available in the LambCode APK with the bundled compiler.' };
   return compiler.getStatus();
 }
 

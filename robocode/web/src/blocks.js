@@ -181,7 +181,7 @@ export function defineRoboCodeBlocks() {
       previousStatement: null,
       nextStatement: null,
       colour: 330,
-      tooltip: 'Store a whole number for this RoboCode project.',
+      tooltip: 'Store a whole number for this LambCode project.',
       helpUrl: '',
     },
     {
@@ -278,7 +278,7 @@ export function defineRoboCodeBlocks() {
       ],
       output: 'Text',
       colour: 65,
-      tooltip: 'Text for a RoboCode display. The LCD shows the first 16 characters on a row.',
+      tooltip: 'Text for a LambCode display. The LCD shows the first 16 characters on a row.',
       helpUrl: '',
     },
     {
@@ -331,7 +331,7 @@ export function defineRoboCodeBlocks() {
       args0: [{
         type: 'field_input',
         name: 'TEXT',
-        text: 'Hello from RoboCode!',
+        text: 'Hello from LambCode!',
       }],
       previousStatement: null,
       nextStatement: null,
@@ -462,7 +462,7 @@ export const toolbox = {
           type: 'robocode_lcd_rows',
           inputs: {
             ROW1: { shadow: { type: 'robocode_text', fields: { TEXT: 'Hello!' } } },
-            ROW2: { shadow: { type: 'robocode_text', fields: { TEXT: 'RoboCode' } } },
+            ROW2: { shadow: { type: 'robocode_text', fields: { TEXT: 'LambCode' } } },
           },
         },
         { kind: 'block', type: 'robocode_lcd_clear' },
