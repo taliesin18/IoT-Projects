@@ -1,0 +1,149 @@
+name: whitesheep
+services:
+  web:
+    image: nginx:1.27-alpine
+    user: "101:101"
+    entrypoint: [nginx, -g, "daemon off;"]
+    ports:
+      - "127.0.0.1:8765:8080"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks: [ingress, private]
+    dns: [127.0.0.1]
+    depends_on:
+      app:
+        condition: service_healthy
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://whitesheep:${POSTGRES_PASSWORD:?Run scripts/setup.ps1 first}@db:5432/whitesheep
+      CONFIG_DIR: /app/config
+      REPOSITORY_ROOT: /repositories
+      PYTHONDONTWRITEBYTECODE: "1"
+      VIDEO_PROJECT_ROOT: /videos
+    volumes:
+      - ./config:/app/config:ro
+      - ./repositories:/repositories:ro
+      - ./video-projects:/videos
+    networks: [private]
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+  video-worker:
+    image: openmontage-studio:base-v1
+    pull_policy: never
+    profiles: [video]
+    user: "10001:10001"
+    init: true
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 4.0
+    mem_limit: 6g
+    pids_limit: 512
+    shm_size: 512m
+    tmpfs:
+      - /tmp:size=2147483648,mode=1777
+      - /home/node:size=134217728,uid=10001,gid=10001,mode=0700
+    environment:
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      npm_config_cache: /tmp/npm-cache
+    volumes:
+      - ./video-projects:/videos
+      - ./video-assets:/app/voices:ro
+      - ./videolab/Composition.tsx:/app/remotion-composer/src/StudioProject.tsx:ro
+      - ./videolab/worker.py:/app/whitesheep-video-worker.py:ro
+    working_dir: /app/remotion-composer
+    command: [python, -u, /app/whitesheep-video-worker.py]
+    restart: unless-stopped
+  asset-worker:
+    image: openmontage-studio:3d-v1
+    pull_policy: never
+    profiles: [video]
+    user: "10001:10001"
+    init: true
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 4.0
+    mem_limit: 6g
+    pids_limit: 512
+    shm_size: 512m
+    tmpfs:
+      - /tmp:size=2147483648,mode=1777
+      - /home/node:size=134217728,uid=10001,gid=10001,mode=0700
+    volumes:
+      - ./video-projects:/videos
+      - ./videolab/asset_worker.py:/app/asset_worker.py:ro
+      - ./videolab/asset_scene.py:/app/asset_scene.py:ro
+    command: [python, -u, /app/asset_worker.py]
+    restart: unless-stopped
+  db:
+    image: pgvector/pgvector:0.8.0-pg17
+    environment:
+      POSTGRES_USER: whitesheep
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup.ps1 first}
+      POSTGRES_DB: whitesheep
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [private]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U whitesheep -d whitesheep"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  ollama:
+    image: ollama/ollama:0.40.14
+    environment:
+      OLLAMA_NO_CLOUD: "1"
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks: [private]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, ollama, list]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+networks:
+  ingress:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+      com.docker.network.bridge.host_binding_ipv4: "127.0.0.1"
+  private:
+    internal: true
+volumes:
+  postgres_data:
+  ollama_data:

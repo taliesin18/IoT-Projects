@@ -1,0 +1,29 @@
+services:
+  image-worker:
+    build:
+      context: .
+      dockerfile: videolab/image/Dockerfile
+    image: whitesheep-image-worker:local
+    profiles: [image]
+    network_mode: none
+    gpus: all
+    user: "10001:10001"
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 4.0
+    mem_limit: 10g
+    pids_limit: 512
+    shm_size: 1g
+    tmpfs:
+      - /tmp:size=2147483648,mode=1777
+    environment:
+      OMP_NUM_THREADS: "2"
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    volumes:
+      - ./video-projects:/videos
+      - ./image-model:/model:ro
+      - ./videolab/image_worker.py:/app/image_worker.py:ro
+    restart: unless-stopped

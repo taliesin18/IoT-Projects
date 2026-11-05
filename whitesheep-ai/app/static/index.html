@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>WhiteSheep · Local workspace</title><link rel="stylesheet" href="/static/styles.css"><link rel="stylesheet" href="/static/videolab.css"><script src="/static/app.js" defer></script></head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="/">◌ <span>WhiteSheep<small>YOUR LOCAL WORKSPACE</small></span></a>
+  <button id="general" class="wide">＋ General chat</button>
+  <a class="video-link" href="/videolab">▶ VideoLab <small>Make a local video</small></a>
+  <div class="section-heading">IDEALAB <span>PROJECTS</span></div>
+  <div id="projects" class="nav-list"></div>
+  <details><summary>＋ Create a project</summary><form id="project-form"><label>Project name<input name="name" required maxlength="120" placeholder="What are you building?"></label><label>Description<textarea name="description" maxlength="3000" rows="3" placeholder="Your idea, goal, or question"></textarea></label><button>Create project</button></form></details>
+  <div class="section-heading">CONVERSATIONS</div><div id="conversations" class="nav-list"></div>
+  <div class="local-note"><span class="dot"></span> Local only <small>Models and memory stay here.</small><small>WhiteSheep v0.1</small></div>
+</aside>
+<main>
+  <header><div><span class="eyebrow">FROM IDEAS TO IMPLEMENTATION</span><h1 id="workspace-title">Your thinking space.</h1><p id="workspace-description">Explore an idea, work through a problem, or start a project.</p></div><span class="badge">On your machine</span></header>
+  <div class="toolbar"><label>Assistant<select id="agent"></select></label><label>Model<select id="route"></select></label><label>Skill category<select id="skill-category"><option value="whitesheep_core">WhiteSheep Core</option><option value="superpower_core">Superpower Core</option></select></label><label>Skill for next message<select id="skill"></select></label><button id="new-chat">＋ New conversation</button><button id="tools-toggle" class="subtle">CodeLab & tools</button></div>
+  <section id="tools-panel" hidden><h2>Read-only CodeLab</h2><p>Repository tools are disabled until you grant access in project settings. They never execute commands. Review files before sharing them with chat.</p><form id="tool-form"><label>Repository<select id="repository"></select></label><label>Action<select id="tool"><option value="repository.list">List source files</option><option value="repository.read">Read a source file</option></select></label><label>Relative file path<input id="tool-path" placeholder="src/main.py"></label><label class="check"><input id="tool-confirm" type="checkbox" required> I authorize this read for the selected repository.</label><button>Run read-only tool</button></form><pre id="tool-output"></pre></section>
+  <div id="status" role="status" aria-live="polite"></div>
+  <section id="messages" aria-label="Conversation"><div class="welcome"><span class="orb">◌</span><h2>A little space for your next big idea.</h2><p>Ask a question below, or create an IdeaLab project to keep requirements and decisions alongside your conversations.</p></div></section>
+  <form id="chat-form"><label class="sr-only" for="prompt">Message WhiteSheep</label><textarea id="prompt" rows="3" maxlength="12000" required placeholder="Think out loud. Start something."></textarea><div class="composer-footer"><span>Local inference · No web access</span><button id="send">Send message ↗</button></div></form>
+</main>
+<aside class="memory-panel"><span class="eyebrow">PROJECT NOTEBOOK</span><h2>Keep the useful parts.</h2><p id="memory-hint">Select a project to save requirements, decisions, and notes.</p><div id="project-memory" hidden><form id="memory-form"><label>Save as<select name="kind" id="memory-kind"></select></label><label>Project memory<textarea name="content" rows="4" required maxlength="4000" placeholder="A requirement, a decision, a useful thought…"></textarea></label><button>Save to project</button></form><div id="memories"></div><details><summary>Project history</summary><div id="history"></div></details></div><div class="notebook-footer">Your project carries the context.<br>The model can change.</div></aside>
+</body></html>

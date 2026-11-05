@@ -1,0 +1,9 @@
+# Project CONTENT lives in PostgreSQL, separate from model/agent configuration.
+default_agent: idealab
+memory_kinds: [requirement, decision, note]
+repositories: {}
+# Explicit opt-in example. Copy a sanitized repository under repositories/demo.
+# repositories:
+#   demo:
+#     path: demo
+#     tools: [repository.list, repository.read]
